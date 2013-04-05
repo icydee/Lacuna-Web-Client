@@ -65,19 +65,11 @@ if (typeof YAHOO.lacuna.SMD == "undefined" || !YAHOO.lacuna.SMD) {
                         {"name":"body_id", "type":"string", "optional":false}
                     ],
                     "returns":{"type":"object"}
-                    /*
-                         {
-                            "build_queue" : {
-                                "building-id-goes-here" : {
-                                    "seconds_remaining" : 60,
-                                    "start" : "01 31 2010 11:08:03 +0600",
-                                    "end" : "01 31 2010 13:09:05 +0600",
-                                },
-                                ....
-                            },
-                            "status" : "get_status",
-                         }
-                    */
+                },
+                "get_body_status" : {
+                    "description" : "Retrieves the status of a body to display in the star map.",
+                    "parameters" : [{"name":"args", "type":"object", "optional":false}],
+                    "returns" : {"type" : "object"}
                 },
                 "get_status" : {
                     "description": "Returns detailed statistics about a planet.",
@@ -176,12 +168,6 @@ if (typeof YAHOO.lacuna.SMD == "undefined" || !YAHOO.lacuna.SMD) {
                             {"name":"ore_type", "type":"string", "optional":false}
                         ],
                         "returns":{"type":"object"}
-                        /*
-                        {
-                            "status" : { get_status() },
-                            "seconds_remaining" : 10800
-                         }
-                        */
                     },
                     "get_glyph_summary" : {
                         "description": "Returns a list of glyphs that may be traded. Used with the add_trade method.",
@@ -198,18 +184,6 @@ if (typeof YAHOO.lacuna.SMD == "undefined" || !YAHOO.lacuna.SMD) {
                             {"name":"building_id", "type":"string", "optional":false}
                         ],
                         "returns":{"type":"object"}
-                        /*
-                         {
-                            "status" : { ... },
-                            "glyphs" : [
-                                {
-                                    "id" : "id-goes-here",
-                                    "type" : "bauxite",
-                                },
-                                ...
-                            ]
-                         }
-                        */
                     },
                     "assemble_glyphs" : {
                         "description": "Turns glyphs into rare ancient items.",
@@ -357,12 +331,12 @@ if (typeof YAHOO.lacuna.SMD == "undefined" || !YAHOO.lacuna.SMD) {
                     "subsidize_one_build" : {
                         "description": "Instantly finish any one building on the build queue.",
                         "parameters": [{"name":"args", "type":"object", "optional":false}],
-						"returns":{"type":"object"}
+                        "returns":{"type":"object"}
                     },
                     "cancel_build" : {
                         "description": "Cancel any one building on the build queue.",
                         "parameters": [{"name":"args", "type":"object", "optional":false}],
-						"returns":{"type":"object"}
+                        "returns":{"type":"object"}
                     },
                     "subsidize_build_queue" : {
                         "description": "Allows a player to instantly finish all buildings in their build queue. The cost is returned by the view method.",
@@ -895,33 +869,6 @@ if (typeof YAHOO.lacuna.SMD == "undefined" || !YAHOO.lacuna.SMD) {
                             {"name":"session_id", "type":"string", "optional":false},
                             {"name":"building_id", "type":"string", "optional":false},
                             {"name":"params", "type":"object", "optional":false}
-                        ],
-                        "returns":{"type":"object"}
-                    }
-                }
-            },
-            HallsOfVrbansk : {
-                "SMDVersion":"2.0",
-                "description": "Halls Of Vrbansk",
-                "envelope":"JSON-RPC-2.0",
-                "transport":"POST",
-                "target":"/hallsofvrbansk",
-
-                "services": {
-                    "get_upgradable_buildings" : {
-                        "description": "",
-                        "parameters": [
-                            {"name":"session_id", "type":"string", "optional":false},
-                            {"name":"building_id", "type":"string", "optional":false}
-                        ],
-                        "returns":{"type":"object"}
-                    },
-                    "sacrifice_to_upgrade" : {
-                        "description": "",
-                        "parameters": [
-                            {"name":"session_id", "type":"string", "optional":false},
-                            {"name":"building_id", "type":"string", "optional":false},
-                            {"name":"upgrade_building_id", "type":"string", "optional":false}
                         ],
                         "returns":{"type":"object"}
                     }
@@ -3210,6 +3157,11 @@ if (typeof YAHOO.lacuna.SMD == "undefined" || !YAHOO.lacuna.SMD) {
                         "status" : { ... }
                      }
                     */
+                },
+                "get_star_map" : {
+                    "description" : "Retrieves a chunk of the star map (lite version).",
+                    "parameters" : [{"name":"args", "type":"object", "optional":false}],
+                    "returns" : {"type" : "object"}
                 },
                 "get_stars" : {
                     "description": "Retrieves a chunk of the map and returns it as an array of hashes.",
