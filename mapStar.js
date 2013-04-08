@@ -37,7 +37,8 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
             
             var panel = document.createElement("div");
             panel.id = panelId;
-            panel.innerHTML = ['<div class="hd">Details</div>',
+            panel.innerHTML = [
+				'<div class="hd">Details</div>',
                 '<div class="bd">',
                 '    <div class="yui-g">',
                 '        <div class="yui-u first" id="starDetailsImg" class="background:black:width:100px;">',
@@ -77,11 +78,11 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
                 '</div>'
 			].join('');
             
-            Event.on("sendStarFleetMonth",  "change", function(){Dom.get("sendStarFleetSoonest").checked = ""; this.checkboxState = true;});
-            Event.on("sendStarFleetDate",   "change", function(){Dom.get("sendStarFleetSoonest").checked = ""; this.checkboxState = true;});
-            Event.on("sendStarFleetHour",   "change", function(){Dom.get("sendStarFleetSoonest").checked = ""; this.checkboxState = true;});
-            Event.on("sendStarFleetMinute", "change", function(){Dom.get("sendStarFleetSoonest").checked = ""; this.checkboxState = true;});
-            Event.on("sendStarFleetSecone", "change", function(){Dom.get("sendStarFleetSoonest").checked = ""; this.checkboxState = true;});
+            Event.on("sendStarFleetMonth",  "change", function(){Dom.get("sendStarFleetSoonest").checked = ""; this.checkboxState = false;});
+            Event.on("sendStarFleetDate",   "change", function(){Dom.get("sendStarFleetSoonest").checked = ""; this.checkboxState = false;});
+            Event.on("sendStarFleetHour",   "change", function(){Dom.get("sendStarFleetSoonest").checked = ""; this.checkboxState = false;});
+            Event.on("sendStarFleetMinute", "change", function(){Dom.get("sendStarFleetSoonest").checked = ""; this.checkboxState = false;});
+            Event.on("sendStarFleetSecone", "change", function(){Dom.get("sendStarFleetSoonest").checked = ""; this.checkboxState = false;});
 			
 			this.checkboxState = true; // Sadly, this is the way to go.
 			Event.on("sendStarFleetSoonest", "change", function(e) {
@@ -196,7 +197,8 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
             var panelId = "planetDetails";
             var panel = document.createElement("div");
             panel.id = panelId;
-            panel.innerHTML = ['<div class="hd">Details</div>',
+            panel.innerHTML = [
+				'<div class="hd">Details</div>',
                 '<div class="bd">',
                 '    <div class="yui-g">',
                 '        <div class="yui-u first" id="planetDetailsImg">',
@@ -314,23 +316,9 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
                 '            </div>',
                 '        </div>',
                 '    </div>',
-                '</div>'].join('');
-            
-            Event.on("sendBodyFleetMonth",  "change", function(){Dom.get("sendBodyFleetSoonest").checked = ""; this.checkboxState = true;});
-            Event.on("sendBodyFleetDate",   "change", function(){Dom.get("sendBodyFleetSoonest").checked = ""; this.checkboxState = true;});
-            Event.on("sendBodyFleetHour",   "change", function(){Dom.get("sendBodyFleetSoonest").checked = ""; this.checkboxState = true;});
-            Event.on("sendBodyFleetMinute", "change", function(){Dom.get("sendBodyFleetSoonest").checked = ""; this.checkboxState = true;});
-            Event.on("sendBodyFleetSecone", "change", function(){Dom.get("sendBodyFleetSoonest").checked = ""; this.checkboxState = true;});
+                '</div>'
+			].join('');
 			
-			this.checkboxState = true; // Sadly, this is the way to go.
-			Event.on("sendBodyFleetSoonest", "change", function(e) {
-				var checkbox = Dom.get("sendBodyFleetSoonest");
-				var sendDetails = Dom.get("planetDetailsSendShipSpecificTime");
-				this.Self.checkboxState = !this.Self.checkboxState;
-				
-				sendDetails.style.display = this.Self.checkboxState ? 'none' : '';
-			}, {Self: this}, true);
-            
             document.body.insertBefore(panel, document.body.firstChild);
             Dom.addClass(panel, "nofooter");
             
@@ -920,6 +908,22 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
                     
                     Event.on("send_fleet_"+fleet.id, "click", this.FleetSend, {Self:this,Fleet:fleet,Line:nLi,Panel:panel}, true);
                     Event.on("send_ship_"+fleet.id,  "click", this.FleetSend, {Self:this,Fleet:fleet,Line:nLi,Panel:panel,Quantity:1}, true);
+					
+					Event.on("sendBodyFleetMonth",  "change", function(){Dom.get("sendBodyFleetSoonest").checked = ""; this.checkboxState = false;});
+					Event.on("sendBodyFleetDate",   "change", function(){Dom.get("sendBodyFleetSoonest").checked = ""; this.checkboxState = false;});
+					Event.on("sendBodyFleetHour",   "change", function(){Dom.get("sendBodyFleetSoonest").checked = ""; this.checkboxState = false;});
+					Event.on("sendBodyFleetMinute", "change", function(){Dom.get("sendBodyFleetSoonest").checked = ""; this.checkboxState = false;});
+					Event.on("sendBodyFleetSecone", "change", function(){Dom.get("sendBodyFleetSoonest").checked = ""; this.checkboxState = false;});
+					
+					// Add on the events for the fancy checkbox.
+					this.checkboxState = true; // Sadly, this is the way to go.
+					Event.on("sendBodyFleetSoonest", "change", function(e) {
+						var checkbox = Dom.get("sendBodyFleetSoonest");
+						var sendDetails = Dom.get("planetDetailsSendShipSpecificTime");
+						this.Self.checkboxState = !this.Self.checkboxState;
+						
+						sendDetails.style.display = this.Self.checkboxState ? 'none' : '';
+					}, {Self: this}, true);
                 }
             }
             detailsParent.appendChild(details); //add back as child
@@ -1332,25 +1336,48 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
                     }
                     
                     //nLi.Fleet = fleet;
-                    nLi.innerHTML = ['<div class="yui-gd" style="margin-bottom:5px;">',
-                    '    <div class="yui-u first" style="width:20%;background:transparent url(',Lib.AssetUrl,'star_system/field.png) no-repeat center;text-align:center;">',
-                    '        <img src="',Lib.AssetUrl,'ships/',fleet.details.type,'.png" style="width:75px;height:75px;" />',
-                    '    </div>',
-                    '    <div class="yui-u" style="width:75%">',
-                    '        <div class="buildingName">',fleet.details.type_human,'</div>',
-                    '        <div><label style="font-weight:bold;">Quantity:</label> ',fleet.quantity, '</div>',
-                    '        <div><label style="font-weight:bold;">Details:</label>',
-                    '            <span><span>Task:</span><span>',fleet.details.task,'</span></span>',
-                    '        </div>',
-                    '        <div><label style="font-weight:bold;">Attributes:</label>',
-                    '            <span>Speed:<span>',fleet.details.speed,'</span></span>,',
-                    '            <span>Berth Level:<span>',fleet.details.berth_level,'</span></span>,',
-                    '            <span>Hold Size:<span>',fleet.details.hold_size,'</span></span>,',
-                    '            <span>Stealth:<span>',fleet.details.stealth,'</span></span>',
-                    '            <span>Combat:<span>',fleet.details.combat,'</span></span>',
-                    '        </div>',
-                    '    </div>',
-                    '</div>'].join('');
+                    nLi.innerHTML = [
+						'<div>',
+						'<table>',
+						'	<colgroup>',
+						'		<col>',
+						'		<col style="width:200px">',
+						'		<col span="4" style="width:70px">',
+						'	</colgroup>',
+						'	<tr>',
+						'		<td rowspan="4">',
+						'			<div style="width:100px;height:100px;background:transparent url(',Lib.AssetUrl,'star_system/field.png) no-repeat center;text-align:center;display:table-cell;vertical-align:middle;">',
+						'        		<img src="',Lib.AssetUrl,'ships/',fleet.details.type,'.png" style="width:80px;height:80px;" />',
+						'    		</div>',
+						'		</td>',
+						'		<td><span style="font-weight:bold;">', fleet.details.type_human, '</span></td>',
+						'		<td colspan="4">&nbsp;</td>',
+						'	</tr>',
+						'	<tr>',
+						'		<td><span style="font-weight:bold;">Details</span></td>',
+						'		<td>Quantity</td>',
+						'		<td>', fleet.quantity, '</td>',
+						'		<td>Task:</td>',
+						'		<td>', fleet.task, '</td>',
+						'	</tr>',
+						'	<tr>',
+						'		<td><span style="font-weight:bold;">Attributes:</span></td>',
+						'		<td>Speed:</td>',
+						'		<td>', fleet.details.speed, '</td>',
+						'		<td>Hold Size:</td>',
+						'		<td>', fleet.details.hold_size, '</td>',
+						'	</tr>',
+						'	<tr>',
+						'		<td>&nbsp;</td>',
+						'		<td>Stealth:</td>',
+						'		<td>', fleet.details.stealth, '</td>',
+						'		<td>Combat:</td>',
+						'		<td>', fleet.details.combat, '</td>',
+						'	</tr>',
+						'</table>',
+						'<hr />',
+						'</div>'
+					].join('');
                     
                     details.appendChild(nLi);
                 }
