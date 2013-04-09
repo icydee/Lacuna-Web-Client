@@ -1276,8 +1276,8 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
             },10);
         },
         
-        GetOrbitingFleets : function(panel, target) {
-            if ( !this.orbitingFleets ) {
+        GetOrbitingFleets : function(panel, target, newValue) {
+            if ( !this.orbitingFleets || newValue ) {
                 Lacuna.Pulser.Show();
                 Game.Services.Buildings.SpacePort.view_orbiting_fleets({"args":{
                     session_id: Game.GetSession(),
@@ -1298,6 +1298,9 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
                     scope:this
                 });
             }
+			else {
+				this.PopulateOrbitingFleetsTab(panel);
+			}
         },
         PopulateOrbitingFleetsTab : function(panel) {
             var fleets = this.orbitingFleets.orbiting,
@@ -1338,11 +1341,11 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
                     //nLi.Fleet = fleet;
                     nLi.innerHTML = [
 						'<div>',
-						'<table>',
+						'<table border="1">',
 						'	<colgroup>',
 						'		<col>',
 						'		<col style="width:200px">',
-						'		<col span="4" style="width:70px">',
+						'		<col span="5" style="width:70px">',
 						'	</colgroup>',
 						'	<tr>',
 						'		<td rowspan="4">',
@@ -1351,7 +1354,10 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
 						'    		</div>',
 						'		</td>',
 						'		<td><span style="font-weight:bold;">', fleet.details.type_human, '</span></td>',
-						'		<td colspan="4">&nbsp;</td>',
+						'		<td colspan="2">From:</td>',
+						'		<td colspan="2">', fleet.from.empire.name, '</td>',
+						fleet.can_recall ?
+						'		<td><input type="text" id="recallFleetQuantity_' + fleet.id + '" style="width:70px" value="' + fleet.quantity + '" /></td>' : '',
 						'	</tr>',
 						'	<tr>',
 						'		<td><span style="font-weight:bold;">Details</span></td>',
@@ -1359,6 +1365,8 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
 						'		<td>', fleet.quantity, '</td>',
 						'		<td>Task:</td>',
 						'		<td>', fleet.task, '</td>',
+						fleet.can_recall ?
+						'		<td><button type="button" id="recallFleet_' + fleet.id + '">Recall Fleet</button>' : '',
 						'	</tr>',
 						'	<tr>',
 						'		<td><span style="font-weight:bold;">Attributes:</span></td>',
@@ -1366,6 +1374,8 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
 						'		<td>', fleet.details.speed, '</td>',
 						'		<td>Hold Size:</td>',
 						'		<td>', fleet.details.hold_size, '</td>',
+						fleet.can_scuttle ?
+						'		<td><input type="text" id="scuttleFleetQuantity_' + fleet.id + '" style="width:70px" value="' + fleet.quantity + '" /></td>' : '',
 						'	</tr>',
 						'	<tr>',
 						'		<td>&nbsp;</td>',
@@ -1373,6 +1383,8 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
 						'		<td>', fleet.details.stealth, '</td>',
 						'		<td>Combat:</td>',
 						'		<td>', fleet.details.combat, '</td>',
+						fleet.can_scuttle ?
+						'		<td><button type="button" id="scuttleFleet_' + fleet.id + '">Scuttle Fleet</button>' : '',
 						'	</tr>',
 						'</table>',
 						'<hr />',
@@ -1380,10 +1392,17 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
 					].join('');
                     
                     details.appendChild(nLi);
+					
+					if (fleet.can_recall) {
+						Event.on("recallFleet_" + fleet.id, 'click', this.RecallFleet, {Self:this, Fleet:fleet, Panel: panel}, true);
+					}
+					if (fleet.can_scuttle) {
+						Event.on("scuttleFleet_" + fleet.id, 'click', this.ScuttleFleet, {Self:this, Fleet:fleet, Panel: panel}, true);
+					}
                 }
             }
             else {
-                details.innerHTML = '<li>No Orbiting fleets</li>';
+                details.innerHTML = '<li>No Orbiting fleets.</li>';
             }
             detailsParent.appendChild(details); //add back as child
             
@@ -1492,9 +1511,10 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
                 details = Sel.query(".responseContainer", window, true),
                 detailsParent = details.parentNode;
             
-            if (!details)
+            if (!details) {
                 return;
-            
+            }
+			
             details = detailsParent.removeChild(details); //remove from DOM to make this faster
             
             if(excavators && excavators.length > 0) {
@@ -1532,7 +1552,42 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
                 Dom.setStyle(details.parentNode,"overflow-y","auto");
             },10);
         },
-
+		RecallFleet : function(e) {
+			var quantity = Dom.get('recallFleetQuantity_' + this.Fleet.id).value;
+			
+			Lacuna.Pulser.Show();
+			Game.Services.Buildings.SpacePort.recall_fleet({ args: {
+				session_id: Game.GetSession(''),
+				fleet_id: this.Fleet.id,
+				quantity: quantity
+			}}, {
+				success: function(o) {
+					Lacuna.Pulser.Hide();
+					
+					this.Self.GetOrbitingFleets(this.Panel, {body_id: this.Fleet.to.id}, true);
+                    this.Self.PopulateOrbitingFleetsTab(this.Panel);
+				},
+				scope: this
+			});
+		},
+		ScuttleFleet : function(e) {
+			var quantity = Dom.get('scuttleFleetQuantity_' + this.Fleet.id).value;
+			
+			Lacuna.Pulser.Show();
+			Game.Services.Buildings.SpacePort.scuttle_fleet({ args: {
+				session_id: Game.GetSession(''),
+				fleet_id: this.Fleet.id,
+				quantity: quantity
+			}}, {
+				success: function(o) {
+					Lacuna.Pulser.Hide();
+					
+					this.Self.GetOrbitingFleets(this.Panel, {body_id: this.Fleet.to.id}, true);
+                    this.Self.PopulateOrbitingFleetsTab(this.Panel);
+				},
+				scope: this
+			});
+		},
         ShowStar : function(tile, keepOpen) {
             if(!keepOpen) {
                 Game.OverlayManager.hideAllBut(this.starDetails.id);
