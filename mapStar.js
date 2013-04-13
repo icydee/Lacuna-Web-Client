@@ -1129,8 +1129,8 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
             
         },
         
-        GetIncomingFleets : function(panel, target) {
-            if ( !this.incomingFleets ) {
+        GetIncomingFleets : function(panel, target, newValue) {
+            if ( !this.incomingFleets || newValue ) {
                 Lacuna.Pulser.Show();
                 Game.Services.Buildings.SpacePort.view_incoming_fleets({"args":{
                     session_id: Game.GetSession(),
@@ -1151,6 +1151,9 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
                     scope:this
                 });
             }
+			else {
+				this.PopulateIncomingFleetsTab(panel);
+			}
         },
         PopulateIncomingFleetsTab : function(panel) {
             var fleets = this.incomingFleets.incoming,
@@ -1208,11 +1211,11 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
                     
                     nLi.innerHTML = [
 						'<div>',
-						'<table>',
+						'<table border="1">',
 						'	<colgroup>',
 						'		<col>',
 						'		<col style="width:200px">',
-						'		<col span="4" style="width:70px">',
+						'		<col span="5" style="width:70px">',
 						'	</colgroup>',
 						'	<tr>',
 						'		<td rowspan="4">',
@@ -1221,11 +1224,20 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
 						'    		</div>',
 						'		</td>',
 						'		<td><span style="font-weight:bold;">', fleet.details.type_human, '</span></td>',
-						'		<td colspan="2">Arrives in:</td>',
-						'		<td colspan="2"><span class="shipArrives">', Lib.formatTime(sec), '</span></td>',
+						'		<td colspan="2">From:</td>',
+						'		<td colspan="2"><span style="cursor:pointer;text-decoration:underline;" id="incomingFleetsEmpire_', fleet.from.empire.id, '">', fleet.from.empire.name, '</span></td>',
+						!fleet.can_recall ?
+						'		<td><input type="text" id="recallFleetQuantity_' + fleet.id + '" style="width:70px" value="' + fleet.quantity + '" /></td>' : '',
 						'	</tr>',
 						'	<tr>',
 						'		<td><span style="font-weight:bold;">Details:</span></td>',
+						'		<td colspan="2">Arrives In:</td>',
+						'		<td colspan="2"><span class="shipArrives">', Lib.formatTime(sec), '</span></td>',
+						!fleet.can_recall ?
+						'		<td><button type="button" id="recallFleet_' + fleet.id + '">Recall Fleet</button>' : '',
+						'	</tr>',
+						'	<tr>',
+						'		<td>&nbsp;</td>',
 						'		<td>Quantity:</td>',
 						'		<td>', fleet.quantity, '</td>',
 						'		<td>Task:</td>',
@@ -1239,7 +1251,7 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
 						'		<td>', fleet.details.hold_size, '</td>',
 						'	</tr>',
 						'	<tr>',
-						'		<td>&nbsp;</td>',
+						'		<td colspan="2">&nbsp;</td>',
 						'		<td>Stealth:</td>',
 						'		<td>', fleet.details.stealth, '</td>',
 						'		<td>Combat:</td>',
@@ -1249,7 +1261,7 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
 						'	<tr>'+
 						'		<td>&nbsp;</td>'+
 						'		<td><span style="font-weight:bold;">Payload:</span></td>'+
-						'		<td colspan="4">' + fleet.details.payload.join(', ') + '</td>'+
+						'		<td colspan="4">' + Lib.formatInlineList(fleet.details.payload) + '</td>'+
 						'	</tr>' : '',
 						'</table>',
 						'<hr />',
@@ -1259,6 +1271,17 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
                     panel.addQueue(sec, this.ArrivesQueue, nLi);
                     
                     details.appendChild(nLi);
+					
+					if (!fleet.can_recall) {
+						Event.on("recallFleet_" + fleet.id, 'click', this.RecallFleet, {Self:this, Fleet:fleet, Panel: panel, panelName: 'incoming'}, true);
+					}
+					if (fleet.can_scuttle) {
+						Event.on("scuttleFleet_" + fleet.id, 'click', this.ScuttleFleet, {Self:this, Fleet:fleet, Panel: panel, panelName: 'incoming'}, true);
+					}
+					
+					Event.on('incomingFleetsEmpire_' + fleet.from.empire.id, "click", function(){
+						Lacuna.Info.Empire.Load(this.id);
+					}, fleet.from.empire, true);
                 }
                 
             }    
@@ -1341,7 +1364,7 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
                     //nLi.Fleet = fleet;
                     nLi.innerHTML = [
 						'<div>',
-						'<table border="1">',
+						'<table>',
 						'	<colgroup>',
 						'		<col>',
 						'		<col style="width:200px">',
@@ -1355,7 +1378,7 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
 						'		</td>',
 						'		<td><span style="font-weight:bold;">', fleet.details.type_human, '</span></td>',
 						'		<td colspan="2">From:</td>',
-						'		<td colspan="2">', fleet.from.empire.name, '</td>',
+						'		<td colspan="2"><span style="cursor:pointer;text-decoration:underline;" id="orbitingFleetsEmpire_', fleet.from.empire.id, '">', fleet.from.empire.name, '</span></td>',
 						fleet.can_recall ?
 						'		<td><input type="text" id="recallFleetQuantity_' + fleet.id + '" style="width:70px" value="' + fleet.quantity + '" /></td>' : '',
 						'	</tr>',
@@ -1394,17 +1417,21 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
                     details.appendChild(nLi);
 					
 					if (fleet.can_recall) {
-						Event.on("recallFleet_" + fleet.id, 'click', this.RecallFleet, {Self:this, Fleet:fleet, Panel: panel}, true);
+						Event.on("recallFleet_" + fleet.id, 'click', this.RecallFleet, {Self:this, Fleet:fleet, Panel: panel, panelName: 'orbiting'}, true);
 					}
 					if (fleet.can_scuttle) {
-						Event.on("scuttleFleet_" + fleet.id, 'click', this.ScuttleFleet, {Self:this, Fleet:fleet, Panel: panel}, true);
+						Event.on("scuttleFleet_" + fleet.id, 'click', this.ScuttleFleet, {Self:this, Fleet:fleet, Panel: panel, panelName: 'orbiting'}, true);
 					}
+					
+					Event.on('orbitingFleetsEmpire_' + fleet.from.empire.id, "click", function(){
+						Lacuna.Info.Empire.Load(this.id);
+					}, fleet.from.empire, true);
                 }
             }
             else {
                 details.innerHTML = '<li>No Orbiting fleets.</li>';
             }
-            detailsParent.appendChild(details); //add back as child
+            detailsParent.appendChild(details); // add back as child
             
             //wait for tab to display first
             setTimeout(function() {
@@ -1564,8 +1591,9 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
 				success: function(o) {
 					Lacuna.Pulser.Hide();
 					
-					this.Self.GetOrbitingFleets(this.Panel, {body_id: this.Fleet.to.id}, true);
-                    this.Self.PopulateOrbitingFleetsTab(this.Panel);
+					this.panelName === 'incoming' ? 
+						this.Self.GetIncomingFleets(this.Panel, this.Fleet.to.type === 'body' ? {body_id: this.Fleet.to.id} : {star_id: this.Fleet.to.id}, true) :
+						this.Self.GetOrbitingFleets(this.Panel, {body_id: this.Fleet.to.id}, true);
 				},
 				scope: this
 			});
@@ -1582,8 +1610,9 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
 				success: function(o) {
 					Lacuna.Pulser.Hide();
 					
-					this.Self.GetOrbitingFleets(this.Panel, {body_id: this.Fleet.to.id}, true);
-                    this.Self.PopulateOrbitingFleetsTab(this.Panel);
+					this.panelName === 'incoming' ? 
+						this.Self.GetIncomingFleets(this.Panel, {body_id: this.Fleet.to.id}, true) :
+						this.Self.GetOrbitingFleets(this.Panel, {body_id: this.Fleet.to.id}, true);
 				},
 				scope: this
 			});
