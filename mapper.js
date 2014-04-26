@@ -334,11 +334,11 @@ if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
                 
             }
             else {
-                if (this.data.station) {
+                if (this.data.seized == 1) {
 
-                    var station = this.data.station;
+                    var alliance = this.data.alliance;
                     var pSize = this.tileSizeInPx;
-                    this.logoHolder.innerHTML= ['<img src="',Lib.AssetUrl,'alliances/',station.alliance.image,'.png" class="star" style="width:',pSize,'px;height:',pSize,'px;" />'].join('');
+                    this.logoHolder.innerHTML= ['<img src="',Lib.AssetUrl,'alliances/',alliance.image,'.png" class="star" style="width:',pSize,'px;height:',pSize,'px;" />'].join('');
                 }
                 this.imageHolder.innerHTML = ['<img src="',this.image,'" class="star" style="width:',this.tileSizeInPx,'px;height:',this.tileSizeInPx,'px;" />'].join('');
             }
