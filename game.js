@@ -540,10 +540,55 @@ if (typeof YAHOO.lacuna.Game == "undefined" || !YAHOO.lacuna.Game) {
                     if(!Lacuna.Game.EmpireData.planetsByName){
                         Lacuna.Game.EmpireData.planetsByName = {};
                     }
+                    if(!Lacuna.Game.EmpireData.just_stations) {
+                        Lacuna.Game.EmpireData.just_stations = {};
+                    }
+                    if(!Lacuna.Game.EmpireData.just_planets) {
+                        Lacuna.Game.EmpireData.just_planets = {};
+                    }
+                    for(var pKey in status.empire.space_stations) {
+                        if(status.empire.space_stations.hasOwnProperty(pKey)){
+                            var ePlanet = Lacuna.Game.EmpireData.planets[pKey];
+                            if(ePlanet) {
+                                Lacuna.Game.EmpireData.planets[pKey].name = status.empire.space_stations[pKey];
+                            }
+                            else {
+                                Lacuna.Game.EmpireData.planets[pKey] = {
+                                    id: pKey,
+                                    name: status.empire.space_stations[pKey],
+                                    star_name: "",
+                                    image: undefined,
+                                    energy_capacity: 0,
+                                    energy_hour: 0,
+                                    energy_stored: 0,
+                                    food_capacity: 0,
+                                    food_hour: 0,
+                                    food_stored: 0,
+                                    happiness: 0,
+                                    happiness_hour: 0,
+                                    ore_capacity: 0,
+                                    ore_hour: 0,
+                                    ore_stored: 0,
+                                    waste_capacity: 0,
+                                    waste_hour: 0,
+                                    waste_stored: 0,
+                                    water_capacity: 0,
+                                    water_hour: 0,
+                                    water_stored: 0
+                                };
+                            }
+                            Lacuna.Game.EmpireData.planetsByName[status.empire.space_stations[pKey]] = Lacuna.Game.EmpireData.planets[pKey];
+                            Lacuna.Game.EmpireData.just_stations[pKey] = status.empire.space_stations[pKey];
+                            doMenuUpdate = true;
+                        }
+                    }
                     for(var pKey in status.empire.planets) {
                         if(status.empire.planets.hasOwnProperty(pKey)){
                             var ePlanet = Lacuna.Game.EmpireData.planets[pKey];
-                            if(!ePlanet) {
+                            if(ePlanet) {
+                                Lacuna.Game.EmpireData.planets[pKey].name = status.empire.planets[pKey];
+                            }
+                            else {
                                 Lacuna.Game.EmpireData.planets[pKey] = {
                                     id: pKey,
                                     name: status.empire.planets[pKey],
@@ -568,14 +613,13 @@ if (typeof YAHOO.lacuna.Game == "undefined" || !YAHOO.lacuna.Game) {
                                     water_stored: 0
                                 };
                             }
-                            else {
-                                Lacuna.Game.EmpireData.planets[pKey].name = status.empire.planets[pKey];
-                            }
                             Lacuna.Game.EmpireData.planetsByName[status.empire.planets[pKey]] = Lacuna.Game.EmpireData.planets[pKey];
+                            Lacuna.Game.EmpireData.just_planets[pKey] = status.empire.planets[pKey];
                             doMenuUpdate = true;
                         }
                     }
                     delete status.empire.planets; //delete this so it doesn't overwrite the desired structure
+                    delete status.empire.space_stations;
                     
                     //add everything from status empire to game empire
                     Lang.augmentObject(Lacuna.Game.EmpireData, status.empire, true);

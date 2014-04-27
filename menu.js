@@ -559,6 +559,8 @@ if (typeof YAHOO.lacuna.Menu == "undefined" || !YAHOO.lacuna.Menu) {
         update : function() {
             var ED = Game.EmpireData,
                 planets = ED.planets || {},
+                just_planets = ED.just_planets || {},                     
+                planets = ED.planets || {},
                 cpi = ED.current_planet_id || ED.home_planet_id,
                 cp = planets[cpi],
                 count = 0;
@@ -572,6 +574,7 @@ if (typeof YAHOO.lacuna.Menu == "undefined" || !YAHOO.lacuna.Menu) {
                         pObj = { 
                             text: p.name, 
                             id: "planetMenuItem"+(count++), 
+                            is_station: (just_planets[pKey] ? 0 : 1),
                             onclick: { fn: this.menuClick, obj:p }
                         },
                         submenuItems = [{ text: "Go To Surface", onclick: { fn: this.menuPlanetClick, obj:p } }];
@@ -589,6 +592,8 @@ if (typeof YAHOO.lacuna.Menu == "undefined" || !YAHOO.lacuna.Menu) {
             items.sort(function(a,b){
                 var nameA = a.text.toLowerCase( );
                 var nameB = b.text.toLowerCase( );
+                if (a.is_station && ! b.is_station) { return 1; }
+                if (! a.is_station && b.is_station) { return -1; }
                 if (nameA < nameB) {return -1;}
                 if (nameA > nameB) {return 1;}
                 return 0;
