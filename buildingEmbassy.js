@@ -37,11 +37,56 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                 if(this.isLeader) {
                     tabs.push(this._getSendTab());
                 }
+                tabs.push(this._getLawsTab());
+                tabs.push(this._getPropsTab());
+                if(this.building.level >= 4) {
+                    tabs.push(this._getCreateWritTab());
+                }
                 return tabs;
             }
             else {
-                return [this._getCreateTab(),this._getInvitesTab()];
+                return [this._getCreateAllianceTab(),this._getInvitesTab()];
             }
+        },
+        _getLawsTab : function() {
+            this.lawsTab = new YAHOO.widget.Tab({ label: "Laws", content: [
+                '<div>',
+                '    <div style="overflow:auto;"><ul id="lawsDetails"></ul></div>',
+                '</div>'
+            ].join('')});
+
+            return this.lawsTab;
+        },
+        _getPropsTab : function() {
+            this.propsTab = new YAHOO.widget.Tab({ label: "Propositions", content: [
+                '<div>',
+                '    <div style="overflow:auto;"><ul id="propsDetails"></ul></div>',
+                '</div>'
+            ].join('')});
+
+            return this.propsTab;
+        },
+        _getCreateWritTab : function() {
+            var opts = ['<option value="proposeWrit" selected>Writ</option>'];
+            var dis = [];
+            this.createTab = new YAHOO.widget.Tab({ label: "Propose", content: [
+                '<div id="proposeContainer">',
+                '    <div style="border-bottom:1px solid #52acff;padding-bottom:5px; margin-bottom:5px;">',
+                '        Propose: <select id="proposeSelect">',
+                opts.join(''),
+                '    </select></div>',
+                '    <div id="proposeMessage"></div>',
+                '    <div id="proposeWrit" class="proposeOption">',
+                '        <ul><li><label>Template:</label><select id="proposeWritTemplates"></select></li>',
+                '        <li><label>Title:</label><input type="text" id="proposeTitle" size="50" maxlength="30" /></li>',
+                '        <li><label>Description:</label><textarea id="proposeDesc" rows="4" cols="80"></textarea></li></ul><br />',
+                '        <button type="button" id="proposeWritSubmit">Propose Writ</button>',
+                '    </div>',
+                dis.join(''),
+                '</div>'
+            ].join('')});
+
+            return this.createTab;
         },
         _getAllianceTab : function() {
             var div = document.createElement("div");
@@ -78,7 +123,7 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                 Event.on("embassyAllianceLeave","click", this.LeaveAlliance, this, true);
             }
         
-            this.allianceTab = new YAHOO.widget.Tab({ label: this.alliance.name, contentEl:div });
+            this.allianceTab = new YAHOO.widget.Tab({ label: 'Alliance', contentEl:div });
             
             return this.allianceTab;
         },
@@ -94,7 +139,7 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
             
             return this.memberTab;
         },
-        _getCreateTab : function() {
+        _getCreateAllianceTab : function() {
             this.createTab = new YAHOO.widget.Tab({ label: "Create Alliance", content: ['<div>',
             '    <label>Alliance Name</label><input type="text" id="embassyCreateName" />',
             '    <div id="embassyCreateMessage" class="alert"></div>',
@@ -106,7 +151,7 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
             return this.createTab;
         },
         _getInvitesTab : function() {
-            this.invitesTab = new YAHOO.widget.Tab({ label: "View Invites", content: ['<div>',
+            this.invitesTab = new YAHOO.widget.Tab({ label: "My Invites", content: ['<div>',
             '    <ul class="embassyHeader embassyInfo clearafter">',
             '        <li class="embassyAlliance">Alliance</li>',
             '        <li class="embassyAction"></li>',
