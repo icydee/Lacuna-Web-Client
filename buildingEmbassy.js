@@ -23,6 +23,7 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
         if(this.building.level > 0) {
             this.subscribe("onLoad", this.MembersPopulate, this, true);
         }
+        this.canRepealLaw = this.building.level >= 5;
     };
     
     Lang.extend(Embassy, Lacuna.buildings.Building, {
@@ -40,7 +41,7 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                 tabs.push(this._getLawsTab());
                 tabs.push(this._getPropsTab());
                 if(this.building.level >= 4) {
-                    tabs.push(this._getCreateWritTab());
+                    tabs.push(this._getProposeTab());
                 }
                 return tabs;
             }
@@ -54,6 +55,29 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                 '    <div style="overflow:auto;"><ul id="lawsDetails"></ul></div>',
                 '</div>'
             ].join('')});
+            this.lawsTab.subscribe("activeChange", function(e) {
+                if(e.newValue) {
+                    if(!this.laws) {
+                        Lacuna.Pulser.Show();
+                        this.service.view_laws({ session_id:Game.GetSession(), building_id:this.building.id }, {
+                            success : function(o){
+                                Lacuna.Pulser.Hide();
+                                this.rpcSuccess(o);
+                                this.laws = o.result.laws;
+
+                                this.LawsPopulate();
+                            },
+                            scope:this
+                        });
+                    }
+                }
+            }, this, true);
+
+            Event.delegate("lawsDetails", "click", this.LawClick, "button", this, true);
+            Event.delegate("lawsDetails", "click", this.handleProfileLink, "a.profile_link", this, true);
+            Event.delegate("lawsDetails", "click", this.handleStarmapLink, "a.starmap_link", this, true);
+            Event.delegate("lawsDetails", "click", this.handlePlanetLink, "a.planet_link", this, true);
+            Event.delegate("lawsDetails", "click", this.handleAllianceLink, "a.alliance_link", this, true);
 
             return this.lawsTab;
         },
@@ -66,10 +90,38 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
 
             return this.propsTab;
         },
-        _getCreateWritTab : function() {
+        _getProposeTab : function() {
             var opts = ['<option value="proposeWrit" selected>Writ</option>'];
             var dis = [];
-            this.createTab = new YAHOO.widget.Tab({ label: "Propose", content: [
+            var getAllianceMembers;
+
+            if(this.building.level >= 6) {
+                opts[opts.length] = '<option value="proposeTransfer">Transfer Station Ownership</option>';
+                dis[dis.length] = [
+                '    <div id="proposeTransfer" class="proposeOption" style="display:none;">',
+                '        <label>Empire:</label><select id="proposeTransferTo"></select><br />',
+                '        <button type="button" id="proposeTransferSubmit">Propose Transfer</button>',
+                '    </div>'
+                ].join('');
+                getAllianceMembers = true;
+                this.subscribe("onLoad", function() {
+                    this.subscribe("onAllianceMembers", function() {
+                        var sel = Dom.get("proposeTransferTo"),
+                            opts = [];
+                        for(var n=0; n<this.allianceMembers.length; n++) {
+                            var member = this.allianceMembers[n];
+                            if(member.id != Game.EmpireData.id) {
+                                opts[opts.length] = '<option value="'+member.id+'">'+member.name+'</option>';
+                            }
+                        }
+                        sel.innerHTML = opts.join('');
+                        sel.selectedIndex = -1;
+                    }, this, true);
+                    Event.on("proposeTransferSubmit", "click", this.TransferOwner, this, true);
+                }, this, true);
+            }
+
+            this.proposeTab = new YAHOO.widget.Tab({ label: "Propose", content: [
                 '<div id="proposeContainer">',
                 '    <div style="border-bottom:1px solid #52acff;padding-bottom:5px; margin-bottom:5px;">',
                 '        Propose: <select id="proposeSelect">',
@@ -86,7 +138,37 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                 '</div>'
             ].join('')});
 
-            return this.createTab;
+            this.subscribe("onLoad", function() {
+                this.proposeOptions = Sel.query("div.proposeOption", "proposeContainer");
+                this.proposeMessage = Dom.get("proposeMessage");
+
+                Event.on("proposeSelect", "change", function(e) {
+                    Dom.setStyle(this.proposeOptions, "display", "none");
+                    Dom.setStyle(Lib.getSelectedOptionValue("proposeSelect"), "display", "");
+                }, this, true);
+
+                //Propose Writ
+                var t = Dom.get("proposeWritTemplates"),
+                    templates = Game.Resources.writ_templates,
+                    opts = [];
+                for(var n=0; n<templates.length; n++) {
+                    var tmp = templates[n];
+                    opts.push('<option value="');
+                    opts.push(n);
+                    opts.push('">');
+                    opts.push(tmp.title);
+                    opts.push('</option>');
+                }
+                t.innerHTML = opts.join('');
+                Dom.get("proposeTitle").value = templates[0].title;
+                Dom.get("proposeDesc").value = templates[0].description;
+
+                Event.on(t, "change", this.ProposeWritTemplateChange, this, true);
+
+                Event.on("proposeWritSubmit", "click", this.ProposeWrit, this, true);
+            }, this, true);
+
+            return this.proposeTab;
         },
         _getAllianceTab : function() {
             var div = document.createElement("div");
@@ -140,7 +222,7 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
             return this.memberTab;
         },
         _getCreateAllianceTab : function() {
-            this.createTab = new YAHOO.widget.Tab({ label: "Create Alliance", content: ['<div>',
+            this.createAllianceTab = new YAHOO.widget.Tab({ label: "Create Alliance", content: ['<div>',
             '    <label>Alliance Name</label><input type="text" id="embassyCreateName" />',
             '    <div id="embassyCreateMessage" class="alert"></div>',
             '    <button type="button" id="embassyCreateSubmit">Create</button>',
@@ -148,7 +230,7 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
             
             Event.on("embassyCreateSubmit", "click", this.CreateAlliance, this, true);
             
-            return this.createTab;
+            return this.createAllianceTab;
         },
         _getInvitesTab : function() {
             this.invitesTab = new YAHOO.widget.Tab({ label: "My Invites", content: ['<div>',
@@ -621,7 +703,7 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                         this.addTab(this._getAllianceTab());
                         this.addTab(this._getMemberTab());
                         this.addTab(this._getSendTab());
-                        this.removeTab(this.createTab);
+                        this.removeTab(this.createAllianceTab);
                         this.MembersPopulate();
                         Lacuna.Pulser.Hide();
                     },
@@ -732,7 +814,7 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                         this.Self.isLeader = this.Self.alliance && this.Self.alliance.leader_id == Game.EmpireData.id;
                         this.Self.addTab(this.Self._getAllianceTab());
                         this.Self.addTab(this.Self._getMemberTab());
-                        this.Self.removeTab(this.Self.createTab);
+                        this.Self.removeTab(this.Self.createAllianceTab);
                         this.Self.MembersPopulate();
                         
                         Lacuna.Pulser.Hide();
@@ -1069,7 +1151,95 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                     scope:this
                 });
             }
-        }
+        },
+        LawsPopulate : function(){
+            var details = Dom.get("lawsDetails");
+
+            if(details) {
+                var laws = this.laws,
+                    parentEl = details.parentNode,
+                    li = document.createElement("li");
+
+                //Event.purgeElement(details, true);
+                details = parentEl.removeChild(details);
+                details.innerHTML = "";
+
+                for(var i=0; i<laws.length; i++) {
+                    var law = laws[i],
+                        nLi = li.cloneNode(false);
+
+                    nLi.Law = law;
+                    nLi.innerHTML = ['<div style="margin-bottom:2px;">',
+                        '<div class="yui-gb" style="border-bottom:1px solid #52acff;">',
+                        '    <div class="yui-u first"><label>',law.name,'</label></div>',
+                        '    <div class="yui-u" >',(this.canRepealLaw ? '<button type="button">Repeal</button>' : '&nbsp;'),'</span></div>',
+                        '    <div class="yui-u" style="text-align:right;">Enacted ',Lib.formatServerDate(law.date_enacted),'</span></div>',
+                        '</div>',
+                        '<div class="lawDesc">',this.formatBody(law.description),'</div>',
+                        '</div>'].join('');
+
+                    details.appendChild(nLi);
+
+                }
+
+                //add child back in
+                parentEl.appendChild(details);
+
+                //wait for tab to display first
+                setTimeout(function() {
+                    var Ht = Game.GetSize().h - 230;
+                    if(Ht > 300) { Ht = 300; }
+                    var tC = details.parentNode;
+                    Dom.setStyle(tC,"height",Ht + "px");
+                    Dom.setStyle(tC,"overflow-y","auto");
+                },10);
+            }
+        },
+        LawClick : function(e, matchedEl, container){
+            if(matchedEl.innerHTML == "Repeal") {
+                matchedEl.disabled = true;
+                var el = Dom.getAncestorByTagName(matchedEl, "li");
+                if(el) {
+                    this.service.propose_repeal_law({
+                        session_id:Game.GetSession(""),
+                        building_id:this.building.id,
+                        law_id:el.Law.id
+                    },{
+                        success : function(o) {
+                            delete this.props;
+                            matchedEl.parentNode.removeChild(matchedEl);
+                        },
+                        failure : function() {
+                            matchedEl.disabled = false;
+                        },
+                        scope:this
+                    });
+                }
+            }
+
+        },
+
+        formatBody : function(body) {
+            body = body.replace(/&/g,'&amp;');
+            body = body.replace(/</g,'&lt;');
+            body = body.replace(/>/g,'&gt;');
+            body = body.replace(/\n/g,'<br />');
+            body = body.replace(/\*([^*]+)\*/gi,'<b>$1</b>');
+            body = body.replace(/\{(food|water|ore|energy|waste|happiness|time|essentia|plots|build)\}/gi, function(str,icon){
+                var cl = 'small' + icon.substr(0,1).toUpperCase() + icon.substr(1);
+                return '<img src="' + Lib.AssetUrl + 'ui/s/' + icon + '.png" class="' + cl + '" />';
+            });
+            body = body.replace(/\[(https?:\/\/[a-z0-9_.\/\-]+)\]/gi,'<a href="$1">$1</a>');
+            body = body.replace(/\{Empire\s+(-?\d+)\s+([^\}]+)\}/gi,'<a class="profile_link" href="#$1">$2</a>');
+            body = body.replace(/\{Starmap\s+(-?\d+)\s+(-?\d+)\s+([^\}]+)\}/gi,'<a class="starmap_link" href="#$1x$2">$3</a>');
+            body = body.replace(/\{Planet\s+(-?\d+)\s+([^\}]+)\}/gi,'<a class="planet_link" href="#$1">$2</a>');
+            body = body.replace(/\{Alliance\s+(-?\d+)\s+([^\}]+)\}/gi,'<a class="alliance_link" href="#$1">$2</a>');
+            body = body.replace(/\{VoteYes\s(-*\d+)\s(-*\d+)\s(-*\d+)\}/gi,'<a class="voteyes_link" href="#$1&$2&$3">Yes!</a>');
+            body = body.replace(/\{VoteNo\s(-*\d+)\s(-*\d+)\s(-*\d+)\}/gi,'<a class="voteno_link" href="#$1&$2&$3">No!</a>');
+            return body;
+        },
+
+
     });
     
     Lacuna.buildings.Embassy = Embassy;
