@@ -91,9 +91,22 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
             return this.propsTab;
         },
         _getProposeTab : function() {
+            this.createEvent("onAllianceMembers");
+            this.createEvent("onSeizedStars");
             var opts = ['<option value="proposeWrit" selected>Writ</option>'];
             var dis = [];
             var getAllianceMembers;
+            this.seized_stars = [];
+
+            if (this.building.level >= 8) {
+                this.service.get_stars_in_jurisdiction({session_id:Game.GetSession(""),building_id:this.building.id},{
+                    success:function(o){
+                        this.seized_stars = o.result.stars;
+                        this.fireEvent("onSeizedStars");
+                    },
+                    scope : this
+                });
+            }
 
             if(this.building.level >= 6) {
                 opts[opts.length] = '<option value="proposeTransfer">Transfer Station Ownership</option>';
@@ -119,6 +132,330 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                     }, this, true);
                     Event.on("proposeTransferSubmit", "click", this.TransferOwner, this, true);
                 }, this, true);
+            }
+
+            if(this.building.level >= 7) {
+                opts[opts.length] = '<option value="proposeSeizeStar">Seize Star</option>';
+                dis[dis.length] = [
+                '    <div id="proposeSeizeStar" class="proposeOption" style="display:none;">',
+                '        <label>Star:</label><input type="text" id="proposeSeizeStarFind" /><br />',
+                '        <button type="button" id="proposeSeizeStarSubmit">Propose Seize Star</button>',
+                '    </div>'
+                ].join('');
+                this.subscribe("onLoad", function() {
+                    this.seizeStarTextboxList = this.CreateStarSearch("proposeSeizeStarFind");
+                    Event.on("proposeSeizeStarSubmit", "click", this.SeizeStar, this, true);
+                }, this, true);
+            }
+
+            if(this.building.level >= 8) {
+                opts[opts.length] = '<option value="proposeRenameStar">Rename Star</option>';
+                dis[dis.length] = [
+                '    <div id="proposeRenameStar" class="proposeOption" style="display:none;">',
+                '        <ul><li><label>Star:</label><select id="proposeRenameStarSelect"></select></li>',
+                '        <li><label>New Name:</label><input type="text" id="proposeRenameStarName" /></li></ul><br />',
+                '        <button type="button" id="proposeRenameStarSubmit">Propose Rename Star</button>',
+                '    </div>'
+                ].join('');
+                this.subscribe("onLoad", function() {
+                    this.subscribe("onSeizedStars", function() {
+                        var el = Dom.get('proposeRenameStarSelect');
+                        if (el) {
+                            var opts = [];
+                            for(var m=0; m<this.seized_stars.length; m++) {
+                                var obj = this.seized_stars[m];
+                                opts[opts.length] = '<option value="'+obj.id+'">'+obj.name+'</option>';
+                            }
+    
+                            el.innerHTML = opts.join('');
+                            el.selectedIndex = -1;
+                        }
+                        Event.on("proposeRenameStarSubmit", "click", this.RenameStar, this, true);
+                    }, this, true);
+                }, this, true);
+            }
+
+            if(this.building.level >= 9) {
+                opts[opts.length] = '<option value="proposeBroadcast">Broadcast on Net19</option>';
+                dis[dis.length] = [
+                '    <div id="proposeBroadcast" class="proposeOption" style="display:none;">',
+                '        <label>Message:</label><input type="text" id="proposeBroadcastMessage" maxlength="100" size="50" /><br />',
+                '        <button type="button" id="proposeBroadcastSubmit">Propose Broadcast</button>',
+                '    </div>'
+                ].join('');
+                this.subscribe("onLoad", function() {
+                    Event.on("proposeBroadcastSubmit", "click", this.Broadcast, this, true);
+                }, this, true);
+            }
+
+            if(this.building.level >= 10) {
+                opts[opts.length] = '<option value="proposeInduct">Induct Member</option>';
+                opts[opts.length] = '<option value="proposeExpel">Expel Member</option>';
+                dis[dis.length] = [
+                '    <div id="proposeInduct" class="proposeOption" style="display:none;">',
+                '        <ul><li><label>Empire:</label><input type="text" id="proposeInductMember" /></li>',
+                '        <li><label>Message:</label><textarea id="proposeInductMessage" rows="4" cols="80"></textarea></li></ul><br />',
+                '        <button type="button" id="proposeInductSubmit">Propose Induct Member</button>',
+                '    </div>',
+                '    <div id="proposeExpel" class="proposeOption" style="display:none;">',
+                '        <ul><li><label>Empire:</label><select id="proposeExpelMember"></select></li>',
+                '        <li><label>Reason:</label><textarea id="proposeExpelReason" rows="4" cols="80"></textarea></li></ul><br />',
+                '        <button type="button" id="proposeExpelSubmit">Propose Expel Member</button>',
+                '    </div>'
+                ].join('');
+                getAllianceMembers = true;
+                this.subscribe("onLoad", function() {
+                    this.subscribe("onAllianceMembers", function() {
+                        var sel = Dom.get("proposeExpelMember"),
+                            opts = [];
+                        for(var n=0; n<this.allianceMembers.length; n++) {
+                            var member = this.allianceMembers[n];
+                            if(!member.isLeader && member.id != Game.EmpireData.id) {
+                                opts[opts.length] = '<option value="'+member.id+'">'+member.name+'</option>';
+                            }
+                        }
+                        sel.innerHTML = opts.join('');
+                        sel.selectedIndex = -1;
+                    }, this, true);
+
+                    this.inductMemberTextboxList = this.CreateEmpireSearch("proposeInductMember");
+                    Event.on("proposeInductSubmit", "click", this.MemberInduct, this, true);
+                    Event.on("proposeExpelSubmit", "click", this.MemberExpel, this, true);
+                }, this, true);
+            }
+
+            if(this.building.level >= 11) {
+                opts[opts.length] = '<option value="proposeElectLeader">Elect New Leader</option>';
+                dis[dis.length] = [
+                '    <div id="proposeElectLeader" class="proposeOption" style="display:none;">',
+                '        <label>Empire:</label><select id="proposeElectLeaderMember"></select><br />',
+                '        <button type="button" id="proposeElectLeaderSubmit">Propose as New Leader</button>',
+                '    </div>'
+                ].join('');
+                getAllianceMembers = true;
+                this.subscribe("onLoad", function() {
+                    this.subscribe("onAllianceMembers", function() {
+                        var sel = Dom.get("proposeElectLeaderMember"),
+                            opts = [];
+                        for(var n=0; n<this.allianceMembers.length; n++) {
+                            var member = this.allianceMembers[n];
+                            if(!member.isLeader && member.id != Game.EmpireData.id) {
+                                opts[opts.length] = '<option value="'+member.id+'">'+member.name+'</option>';
+                            }
+                        }
+                        sel.innerHTML = opts.join('');
+                        sel.selectedIndex = -1;
+                    }, this, true);
+                    Event.on("proposeElectLeaderSubmit", "click", this.MemberNewLeader, this, true);
+                }, this, true);
+            }
+
+            if(this.building.level >= 12) {
+                opts[opts.length] = '<option value="proposeRenameAsteroid">Rename Asteroid</option>';
+                dis[dis.length] = [
+                '    <div id="proposeRenameAsteroid" class="proposeOption" style="display:none;">',
+                                '               <ul><li><label>Star:</label><select id="proposeRenameAsteroidStar"></select></li>',
+                '        <li><label>Asteroid:</label><select id="proposeRenameAsteroidName"></select></li>',
+                '        <li><label>Name:</label><input type="text" id="proposeRenameAsteroidNewName" /></li></ul><br />',
+                '        <button type="button" id="proposeRenameAsteroidSubmit">Propose Rename Asteroid</button>',
+                '    </div>'
+                ].join('');
+
+                this.subscribe("onSeizedStars", function() {
+                    var el = Dom.get('proposeRenameAsteroidStar');
+                    if (el) {
+                        var opts = [];
+                        for(var m = 0; m < this.seized_stars.length; m++) {
+                            var obj = this.seized_stars[m];
+                            opts[opts.length] = '<option value="' + obj.id + '">' + obj.name + '</option>';
+                        }
+                        el.innerHTML = opts.join('');
+                        el.selectedIndex = -1;
+                    }
+                }, this, true);
+
+                Event.on('proposeRenameAsteroidStar', 'change', this.PopulateBodiesForStar, {
+                    starElement: 'proposeRenameAsteroidStar',
+                    bodyElement: 'proposeRenameAsteroidName',
+                    type: 'asteroid',
+                    Self: this}, true);
+
+                Event.on('proposeRenameAsteroidSubmit', 'click', this.RenameAsteroid, this, true);
+            }
+
+            if(this.building.level >= 13) {
+                opts[opts.length] = '<option value="proposeMembersMining">Members Only Mining Rights</option>';
+                dis[dis.length] = [
+                '    <div id="proposeMembersMining" class="proposeOption" style="display:none;">',
+                '        Allow only members to mine on asteroids under this stations jurisdiction.<br />',
+                '        <button type="button" id="proposeMembersMiningSubmit">Propose</button>',
+                '    </div>'
+                ].join('');
+                Event.on("proposeMembersMiningSubmit", "click", this.MiningOnly, this, true);
+            }
+
+            if(this.building.level >= 14) {
+                                opts[opts.length] = '<option value="proposeEvictMining">Evict Mining Platform</option>';
+                dis[dis.length] = [
+                '    <div id="proposeEvictMining" class="proposeOption" style="display:none;">',
+                '               <ul><li><label>Star:</label><select id="proposeEvictMiningStar"></select></li>',
+                '        <button type="button" id="proposeEvictMiningSubmit">Propose Eviction</button></ul>',
+                '    </div>'
+                ].join('');
+
+                this.subscribe("onSeizedStars", function() {
+                    var el = Dom.get('proposeEvictMiningStar');
+                    if (el) {
+                        var opts = [];
+                        for(var m = 0; m < this.seized_stars.length; m++) {
+                            var obj = this.seized_stars[m];
+                            opts[opts.length] = '<option value="' + obj.id + '">' + obj.name + '</option>';
+                        }
+
+                        el.innerHTML = opts.join('');
+                        el.selectedIndex = -1;
+                    }
+                }, this, true);
+
+                Event.on("proposeEvictMiningStar", "change", this.PopulateBodiesForStar, {
+                    starElement: 'proposeEvictMiningStar',
+                    type: 'asteroid',
+                    Self: this}, true);
+                Event.on('proposeEvictMiningBody', 'change', this.LoadMining, this, true);
+                Event.on('proposeEvictMiningSubmit', 'click', this.EvictMining, this, true);
+            }
+
+            if(this.building.level >= 17) {
+                opts[opts.length] = '<option value="proposeRenameUninhabited">Rename Uninhabited</option>';
+                dis[dis.length] = [
+                '    <div id="proposeRenameUninhabited" class="proposeOption" style="display:none;">',
+                                '               <ul><li><label>Star:</label><select id="proposeRenameUninhabitedStar"></select></li>',
+                '        <li><label>Planet:</label><select id="proposeRenameUninhabitedName"></select></li>',
+                '        <li><label>Name:</label><input type="text" id="proposeRenameUninhabitedNewName" /></li></ul><br />',
+                '        <button type="button" id="proposeRenameUninhabitedSubmit">Propose Rename Uninhabited</button>',
+                '    </div>'
+                ].join('');
+
+                this.subscribe("onSeizedStars", function() {
+                    var el = Dom.get('proposeRenameUninhabitedStar');
+                    if (el) {
+                        var opts = [];
+                        for(var m = 0; m < this.seized_stars.length; m++) {
+                            var obj = this.seized_stars[m];
+                            opts[opts.length] = '<option value="' + obj.id + '">' + obj.name + '</option>';
+                        }
+
+                        el.innerHTML = opts.join('');
+                        el.selectedIndex = -1;
+                    }
+                }, this, true);
+
+                Event.on('proposeRenameUninhabitedStar', 'change', this.PopulateBodiesForStar, {
+                    starElement: 'proposeRenameUninhabitedStar',
+                    bodyElement: 'proposeRenameUninhabitedName',
+                    type: 'habitable planet',
+                    Self: this}, true);
+
+                Event.on('proposeRenameUninhabitedSubmit', 'click', this.RenameUninhabited, this, true);
+            }
+
+            if(this.building.level >= 18) {
+                opts[opts.length] = '<option value="proposeMembersColonize">Members Only Colonization</option>';
+                dis[dis.length] = [
+                '    <div id="proposeMembersColonize" class="proposeOption" style="display:none;">',
+                '        Allow only members to colonize planets under this stations jurisdiction.<br />',
+                '        <button type="button" id="proposeMembersColonizeSubmit">Propose</button>',
+                '    </div>'
+                ].join('');
+                Event.on("proposeMembersColonizeSubmit", "click", this.ColonizeOnly, this, true);
+            }
+
+            if(this.building.level >= 20) {
+                opts[opts.length] = '<option value="proposeMembersExcavation">Members Only Excavation</option>';
+                dis[dis.length] = [
+                '    <div id="proposeMembersExcavation" class="proposeOption" style="display:none;">',
+                '        Allow only members to excavate on bodies under this stations jurisdiction.<br />',
+                '        <button type="button" id="proposeMembersExcavationSubmit">Propose</button>',
+                '    </div>'
+                ].join('');
+                Event.on("proposeMembersExcavationSubmit", "click", this.ExcavationOnly, this, true);
+            }
+            if(this.building.level >= 21) {
+                opts[opts.length] = '<option value="proposeEvictExcav">Evict Excavator</option>';
+                dis[dis.length] = [
+                '    <div id="proposeEvictExcav" class="proposeOption" style="display:none;">',
+                                '               <ul><li><label>Star:</label><select id="proposeEvictExcavStar"></select></li>',
+                                '                <li><label>Body:</label><select id="proposeEvictExcavBody"></select></li>',
+                '        <li><label>Excavator:</label><select id="proposeEvictExcavId"></select></li><br />',
+                '        <button type="button" id="proposeEvictExcavSubmit">Propose Eviction</button></ul>',
+                '    </div>'
+                ].join('');
+            }
+
+            if(this.building.level >= 23) {
+                opts[opts.length] = '<option value="proposeNeutralizeBHG">Neutralize BHG</option>';
+                dis[dis.length] = [
+                '    <div id="proposeNeutralizeBHG" class="proposeOption" style="display:none;">',
+                '        Neutralizes all Black Hole Generators under this stations jurisdiction.<br />',
+                '        <button type="button" id="proposeNeutralizeBHGSubmit">Propose</button>',
+                '    </div>'
+                ].join('');
+                Event.on("proposeNeutralizeBHGSubmit", "click", this.NeutralizeBHG, this, true);
+            }
+
+            if(this.building.level >= 25) {
+                opts[opts.length] = '<option value="proposeFireBfg">Fire BFG</option>';
+                dis[dis.length] = [
+                '    <div id="proposeFireBfg" class="proposeOption" style="display:none;">',
+                                '               <ul><li><label>Star:</label><select id="proposeFireBfgStars"></select></li>',
+                '        <li><label>Body:</label><select id="proposeFireBfgBody"></select></li>',
+                '        <li><label>Reason:</label><textarea id="proposeFireBfgReason" rows="4" cols="80"></textarea></li></ul><br />',
+                '        <button type="button" id="proposeFireBfgSubmit">Propose to Fire BFG!</button>',
+                '    </div>'
+                ].join('');
+
+                this.subscribe("onSeizedStars", function() {
+                    var el = Dom.get('proposeFireBfgStars');
+                    if (el) {
+                        var opts = [];
+                        for(var m = 0; m < this.seized_stars.length; m++) {
+                            var obj = this.seized_stars[m];
+                            opts[opts.length] = '<option value="' + obj.id + '">' + obj.name + '</option>';
+                        }
+
+                        el.innerHTML = opts.join('');
+                        el.selectedIndex = -1;
+                    }
+                }, this, true);
+
+                Event.on("proposeFireBfgStars", "change", this.PopulateBodiesForStar, {
+                    starElement: 'proposeFireBfgStars',
+                    bodyElement: 'proposeFireBfgBody',
+                    Self: this}, true);
+                Event.on("proposeFireBfgSubmit", "click", this.FireBFG, this, true);
+            }
+
+            if (getAllianceMembers) {
+                    Game.Services.Alliance.view_profile({
+                        session_id :    Game.GetSession(),
+                        alliance_id :   Game.EmpireData.alliance_id
+                    }, {
+                        success: function(o) {
+                            var el = Dom.get('proposeTransferTo');
+                            if (el) {
+                                var profile = o.result.profile;
+                                var memberArray = [];
+                                for (var m = 0; m < profile.members.length; m++) {
+                                    var member = profile.members[m];
+                                    member.isLeader = member.id == profile.leader_id
+                                    memberArray[memberArray.length] = member;
+                                }
+                                this.allianceMembers = memberArray;
+                                this.fireEvent("onAllianceMembers");
+                            }
+                        },
+                        scope: this
+                    });
             }
 
             this.proposeTab = new YAHOO.widget.Tab({ label: "Propose", content: [
@@ -1217,6 +1554,44 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                 }
             }
 
+        },
+        PopulateBodiesForStar : function(e) {
+            var starId   = Lib.getSelectedOptionValue(this.starElement),
+                 bodyList = Dom.get(this.bodyElement);
+
+            Lacuna.Pulser.Show()
+            this.Self.service.get_bodies_for_star_in_jurisdiction({
+                 session_id: Game.GetSession(''),
+                 building_id: this.Self.building.id,
+                 star_id: starId
+            }, {   
+                 success: function(o) {
+                     Lacuna.Pulser.Hide();
+                     this.Self.rpcSuccess(o);
+
+                     if (bodyList) {
+                         var bodies = o.result.bodies;
+
+                         var opts = [];
+                         for (var i = 0; i < bodies.length; i++) {
+                             var obj = bodies[i];
+
+                             if (this.type) {
+                                 if (obj.type == this.type) {
+                                     opts[opts.length] = '<option value="' + obj.id + '">' + obj.name + '</option>';
+                                 }
+                             }
+                             else {
+                                 opts[opts.length] = '<option value="' + obj.id + '">' + obj.name + '</option>';
+                             }
+                         }
+
+                         bodyList.innerHTML = opts.join('');
+                         bodyList.selectedIndex = -1;
+                    }
+                },
+            scope: this
+            });
         },
 
         formatBody : function(body) {
