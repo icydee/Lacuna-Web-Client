@@ -1080,7 +1080,7 @@ if (typeof YAHOO.lacuna.Messaging == "undefined" || !YAHOO.lacuna.Messaging) {
         handleVoteYesLink : function(e, el) {
             Event.stopEvent(e);
             var res = el.href.match(/\#(-?\d+)&(-?\d+)&(-?\d+)$/);
-            Game.Services.Modules.Parliament.cast_vote({
+            Game.Services.Modules.Embassy.cast_vote({
                 session_id:Game.GetSession(""),
                 building_id:res[2],
                 proposition_id:res[3],
@@ -1095,7 +1095,7 @@ if (typeof YAHOO.lacuna.Messaging == "undefined" || !YAHOO.lacuna.Messaging) {
         handleVoteNoLink : function(e, el) {
             Event.stopEvent(e);
             var res = el.href.match(/\#(-?\d+)&(-?\d+)&(-?\d+)$/);
-            Game.Services.Modules.Parliament.cast_vote({
+            Game.Services.Modules.Embassy.cast_vote({
                 session_id:Game.GetSession(""),
                 building_id:res[2],
                 proposition_id:res[3],
