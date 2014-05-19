@@ -193,26 +193,14 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                 opts[opts.length] = '<option value="proposeRenameStar">Rename Star</option>';
                 dis[dis.length] = [
                 '    <div id="proposeRenameStar" class="proposeOption" style="display:none;">',
-                '        <ul><li><label>Star:</label><select id="proposeRenameStarSelect"></select></li>',
-                '        <li><label>New Name:</label><input type="text" id="proposeRenameStarName" /></li></ul><br />',
+                '        <label>Star:</label><input type="text" id="proposeRenameStarFind" /><br />',
+                '        <label>New Name:</label><input type="text" id="proposeRenameStarName" /><br />',
                 '        <button type="button" id="proposeRenameStarSubmit">Propose Rename Star</button>',
                 '    </div>'
                 ].join('');
                 this.subscribe("onLoad", function() {
-                    this.subscribe("onSeizedStars", function() {
-                        var el = Dom.get('proposeRenameStarSelect');
-                        if (el) {
-                            var opts = [];
-                            for(var m=0; m<this.seized_stars.length; m++) {
-                                var obj = this.seized_stars[m];
-                                opts[opts.length] = '<option value="'+obj.id+'">'+obj.name+'</option>';
-                            }
-    
-                            el.innerHTML = opts.join('');
-                            el.selectedIndex = -1;
-                        }
-                        Event.on("proposeRenameStarSubmit", "click", this.RenameStar, this, true);
-                    }, this, true);
+                    this.renameStarTextboxList = this.CreateStarSearch("proposeRenameStarFind", Game.EmpireData.alliance_id);
+                    Event.on("proposeRenameStarSubmit", "click", this.RenameStar, this, true);
                 }, this, true);
             }
 
@@ -1893,6 +1881,94 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                 },
                 scope:this
             });
+        },
+        CreateStarSearch : function(id, alliance_id) {
+            var dataSource = new Util.XHRDataSource("/map");
+            dataSource.connMethodPost = "POST";
+            dataSource.maxCacheEntries = 2;
+            dataSource.responseType = YAHOO.util.XHRDataSource.TYPE_JSON;
+            dataSource.responseSchema = {
+                resultsList : "result.stars",
+                fields : ["name","id","zone","color","x","y"]
+            };
+
+            var oTextboxList = new YAHOO.lacuna.TextboxList(id, dataSource, { //config options
+                maxResultsDisplayed: 25,
+                minQueryLength:3,
+                multiSelect:false,
+                forceSelection:false,
+                useIndicator:true
+            });
+            oTextboxList.formatResult = function(oResultData, sQuery, sResultMatch) {
+                return [
+                    '<div class="yui-gf">',
+                    '    <div class="yui-u first" style="background-color:black;">',
+                    '        <img src="',Lib.AssetUrl,'star_map/',oResultData.color,'.png" alt="',oResultData,name,'" style="width:50px;height:50px;" />',
+                    '    </div>',
+                    '    <div class="yui-u">',
+                    '        <div>',oResultData.name,'</div>',
+                    '        <div>',oResultData.x,' : ',oResultData.y,'</div>',
+                    '    </div>',
+                    '</div>'].join("");
+            };
+
+            oTextboxList.generateRequest = function(sQuery){
+                var s;
+                if (alliance_id) {
+                    s = Lang.JSON.stringify({
+                        "id": YAHOO.rpc.Service._requestId++,
+                        "method": "search_stars",
+                        "jsonrpc": "2.0",
+                        "params": [
+                            Game.GetSession(""),
+                            decodeURIComponent(sQuery),
+                            alliance_id
+                        ]
+                    });
+                }
+                else {
+                    s = Lang.JSON.stringify({
+                        "id": YAHOO.rpc.Service._requestId++,
+                        "method": "search_stars",
+                        "jsonrpc": "2.0",
+                        "params": [
+                            Game.GetSession(""),
+                            decodeURIComponent(sQuery)
+                        ]
+                    });
+                }
+                return s;
+            };
+
+            return oTextboxList;
+        },
+        RenameStar : function(e) {
+            if(this.renameStarTextboxList._oTblSingleSelection) {
+                var btn = Event.getTarget(e);
+                btn.disabled = true;
+
+                var selObj = this.renameStarTextboxList._oTblSingleSelection.Object;
+
+                this.service.propose_rename_star({
+                    session_id   : Game.GetSession(''),
+                    building_id  : this.building.id,
+                    star_id      : selObj.id,
+                    name         : Dom.get("proposeRenameStarName").value
+                },
+                {  
+                    success : function(o) {
+                        this.rpcSuccess(o);
+                        this.proposeMessage.innerHTML = "Proposal to Rename star successful.";
+                        Lib.fadeOutElm(this.proposeMessage);
+                        this.renameStarTextboxList.ResetSelections();
+                        btn.disabled = false;
+                    },
+                    failure : function(o) {
+                        btn.disabled = false;
+                    },
+                    scope:this
+                });
+            }
         },
 
         formatBody : function(body) {

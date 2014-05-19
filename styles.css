@@ -2144,7 +2144,7 @@ div.archaeologyGlyphContainer div.archaeologyGlyphHeader {
 #proposeContainer  button { margin-top: 10px; }
 #proposeContainer li { margin-top: 2px; }
 
-#proposeSeizeStarFindTbl, #proposeInductMemberTbl  { width: 400px; }
+#proposeSeizeStarFindTbl, #proposeRenameStarFindTbl, #proposeInductMemberTbl  { width: 400px; }
 
 body.yui-skin-sam .yui-tt .bd {
 	-moz-border-radius:0 0 0 0;

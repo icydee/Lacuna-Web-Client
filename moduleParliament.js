@@ -133,7 +133,7 @@ if (typeof YAHOO.lacuna.modules.Parliament == "undefined" || !YAHOO.lacuna.modul
                 '    </div>'
                 ].join('');
                 this.subscribe("onLoad", function() {
-                    this.seizeStarTextboxList = this.CreateStarSearch("proposeSeizeStarFind");
+                    this.seizeStarTextboxList = this.CreateStarSearch("proposeSeizeStarFind", 26);
                     Event.on("proposeSeizeStarSubmit", "click", this.SeizeStar, this, true);
                 }, this, true);
             }
@@ -568,7 +568,7 @@ if (typeof YAHOO.lacuna.modules.Parliament == "undefined" || !YAHOO.lacuna.modul
             Dom.get("proposeTitle").value = opt.title;
             Dom.get("proposeDesc").value = opt.description;
         },
-        CreateStarSearch : function(id) {
+        CreateStarSearch : function(id, alliance_id) {
             var dataSource = new Util.XHRDataSource("/map");
             dataSource.connMethodPost = "POST";
             dataSource.maxCacheEntries = 2;
@@ -597,8 +597,22 @@ if (typeof YAHOO.lacuna.modules.Parliament == "undefined" || !YAHOO.lacuna.modul
                     '    </div>',
                     '</div>'].join("");
             };
-            oTextboxList.generateRequest = function(sQuery){                
-                var s = Lang.JSON.stringify({
+            oTextboxList.generateRequest = function(sQuery){
+                var s;
+                if (alliance_id) {
+                    s = Lang.JSON.stringify({
+                        "id": YAHOO.rpc.Service._requestId++,
+                        "method": "search_stars",
+                        "jsonrpc": "2.0",
+                        "params": [
+                            Game.GetSession(""),
+                            decodeURIComponent(sQuery),
+                            alliance_id
+                        ]
+                    });
+                }
+                else {
+                    s = Lang.JSON.stringify({
                         "id": YAHOO.rpc.Service._requestId++,
                         "method": "search_stars",
                         "jsonrpc": "2.0",
@@ -607,6 +621,7 @@ if (typeof YAHOO.lacuna.modules.Parliament == "undefined" || !YAHOO.lacuna.modul
                             decodeURIComponent(sQuery)
                         ]
                     });
+                }
                 return s;
             };
 
@@ -1128,7 +1143,7 @@ if (typeof YAHOO.lacuna.modules.Parliament == "undefined" || !YAHOO.lacuna.modul
                 },
                 {
                     success : function(o) {
-                    this.rpcSuccess(o);
+                        this.rpcSuccess(o);
                         this.proposeMessage.innerHTML = "Proposal to Seize star successful.";
                         Lib.fadeOutElm(this.proposeMessage);
                         this.seizeStarTextboxList.ResetSelections();
