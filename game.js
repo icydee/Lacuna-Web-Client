@@ -543,6 +543,9 @@ if (typeof YAHOO.lacuna.Game == "undefined" || !YAHOO.lacuna.Game) {
                     if(!Lacuna.Game.EmpireData.just_stations) {
                         Lacuna.Game.EmpireData.just_stations = {};
                     }
+                    if(!Lacuna.Game.EmpireData.stationsByName){
+                        Lacuna.Game.EmpireData.stationsByName = {};
+                    }
                     if(!Lacuna.Game.EmpireData.just_planets) {
                         Lacuna.Game.EmpireData.just_planets = {};
                     }
@@ -578,6 +581,7 @@ if (typeof YAHOO.lacuna.Game == "undefined" || !YAHOO.lacuna.Game) {
                                 };
                             }
                             Lacuna.Game.EmpireData.planetsByName[status.empire.space_stations[pKey]] = Lacuna.Game.EmpireData.planets[pKey];
+                            Lacuna.Game.EmpireData.stationsByName[status.empire.space_stations[pKey]] = Lacuna.Game.EmpireData.planets[pKey];
                             Lacuna.Game.EmpireData.just_stations[pKey] = status.empire.space_stations[pKey];
                             doMenuUpdate = true;
                         }

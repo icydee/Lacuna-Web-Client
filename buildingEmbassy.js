@@ -136,6 +136,7 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                 opts[opts.length] = '<option value="proposeTransfer">Transfer Station Ownership</option>';
                 dis[dis.length] = [
                 '    <div id="proposeTransfer" class="proposeOption" style="display:none;">',
+                '        <label>Station:</label><select id="proposeTransferStation"></select><br />',
                 '        <label>Empire:</label><select id="proposeTransferTo"></select><br />',
                 '        <button type="button" id="proposeTransferSubmit">Propose Transfer</button>',
                 '    </div>'
@@ -155,6 +156,22 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                         sel.selectedIndex = -1;
                     }, this, true);
                     Event.on("proposeTransferSubmit", "click", this.TransferOwner, this, true);
+                    var station_names = [];
+                    for (var s_name in Lacuna.Game.EmpireData.stationsByName) {
+                        if (Lacuna.Game.EmpireData.stationsByName.hasOwnProperty(s_name)) {
+                            station_names[station_names.length] = Lacuna.Game.EmpireData.stationsByName[s_name].name;
+                        }
+                    }
+                    station_names.sort();
+
+                    var opts = [];
+                    for (var n=0; n<station_names.length; n++) {
+                        var s_name = station_names[n];
+                        opts[opts.length] = '<option value="'+ Lacuna.Game.EmpireData.stationsByName[s_name].id +'">'+ s_name +'</option>';
+                    }
+                    var sel = Dom.get("proposeTransferStation");
+                    sel.innerHTML = opts.join('');
+                    sel.selectedIndex = -1;
                 }, this, true);
             }
 
@@ -473,7 +490,12 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                                     member.isLeader = member.id == profile.leader_id
                                     memberArray[memberArray.length] = member;
                                 }
-                                this.allianceMembers = memberArray;
+                                this.allianceMembers = memberArray.sort(function(a,b) {
+                                    if (a.name > b.name) {
+                                        return 1;
+                                    }
+                                    return -1;
+                                });
                                 this.fireEvent("onAllianceMembers");
                             }
                         },
@@ -530,6 +552,36 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
 
             return this.proposeTab;
         },
+        ProposeWritTemplateChange : function() {
+            var opt = Game.Resources.writ_templates[Lib.getSelectedOption("proposeWritTemplates").value];
+            Dom.get("proposeTitle").value = opt.title;
+            Dom.get("proposeDesc").value = opt.description;
+        },
+        ProposeWrit : function(e) {
+            var btn = Event.getTarget(e);
+            btn.disabled = true;
+
+            this.service.propose_writ({
+                session_id : Game.GetSession(''),
+                building_id : this.building.id,
+                title : Dom.get("proposeTitle").value,
+                description : Dom.get("proposeDesc").value
+            },
+            {
+                success : function(o) {
+                    this.rpcSuccess(o);
+                    this.proposeMessage.innerHTML = "Proposal of Writ successful.";
+                    Lib.fadeOutElm(this.proposeMessage);
+                    this.ProposeWritTemplateChange();
+                    btn.disabled = false;
+                },
+                failure : function(o) {
+                    btn.disabled = false;
+                },
+                scope:this
+            });
+        },
+
         _getAllianceTab : function() {
             var div = document.createElement("div");
             if(this.isLeader) {
@@ -1787,7 +1839,7 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
         PropVoteYes : function(prop, line) {
             this.service.cast_vote({
                 session_id:Game.GetSession(""),
-                building_id:this.building.id,
+                body_id: Game.EmpireData.current_planet_id || Game.EmpireData.home_planet_id,
                 proposition_id:prop.id,
                 vote:1
             },{
@@ -1798,7 +1850,7 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
         PropVoteNo : function(prop, line) {
             this.service.cast_vote({
                 session_id:Game.GetSession(""),
-                building_id:this.building.id,
+                body_id: Game.EmpireData.current_planet_id || Game.EmpireData.home_planet_id,
                 proposition_id:prop.id,
                 vote:0
             },{
@@ -1817,6 +1869,30 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
             }
             this.Line.Prop = newProp;
             this.Line.innerHTML = this.Self.PropLineDetails(newProp, 0);
+        },
+        TransferOwner : function(e) {
+            var btn = Event.getTarget(e);
+            btn.disabled = true;
+
+            this.service.propose_transfer_station_ownership({
+                session_id : Game.GetSession(''),
+                building_id : this.building.id,
+                station_id : Lib.getSelectedOptionValue("proposeTransferStation"),
+                to_empire_id : Lib.getSelectedOptionValue("proposeTransferTo")
+            },
+            {
+                success : function(o) {
+                    this.rpcSuccess(o);
+                    this.proposeMessage.innerHTML = "Proposal to Transfer Ownership successful.";
+                    Lib.fadeOutElm(this.proposeMessage);
+                    Dom.get("proposeTransferTo").selectedIndex = -1;
+                    btn.disabled = false;
+                },
+                failure : function(o) {
+                    btn.disabled = false;
+                },
+                scope:this
+            });
         },
 
         formatBody : function(body) {

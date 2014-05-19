@@ -789,7 +789,7 @@ if (typeof YAHOO.lacuna.SMD == "undefined" || !YAHOO.lacuna.SMD) {
                         "description": "",
                         "parameters": [
                             {"name":"session_id", "type":"string", "optional":false},
-                            {"name":"building_id", "type":"string", "optional":false},
+                            {"name":"body_id", "type":"string", "optional":false},
                             {"name":"proposition_id", "type":"string", "optional":false},
                             {"name":"vote", "type":"string", "optional":false}
                         ],
@@ -819,6 +819,7 @@ if (typeof YAHOO.lacuna.SMD == "undefined" || !YAHOO.lacuna.SMD) {
                         "parameters": [
                             {"name":"session_id", "type":"string", "optional":false},
                             {"name":"building_id", "type":"string", "optional":false},
+                            {"name":"station_id", "type":"string", "optional":false},
                             {"name":"to_empire_id", "type":"string", "optional":false}
                         ],
                         "returns":{"type":"object"}
