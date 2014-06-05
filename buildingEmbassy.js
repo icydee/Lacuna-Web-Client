@@ -27,11 +27,7 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
     };
     
     Lang.extend(Embassy, Lacuna.buildings.Building, {
-        /*destroy : function() {
-            Event.removeListener(document, "mouseup", this.StashMouseUp);
-            
-            Embassy.superclass.destroy.call(this);
-        },*/
+        
         getChildTabs : function() {
             if(this.alliance) {
                 var tabs =  [this._getStashTab(),this._getAllianceTab(),this._getMemberTab(),this._getInvitesTab()];
@@ -283,44 +279,39 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                 opts[opts.length] = '<option value="proposeRenameAsteroid">Rename Asteroid</option>';
                 dis[dis.length] = [
                 '    <div id="proposeRenameAsteroid" class="proposeOption" style="display:none;">',
-                                '               <ul><li><label>Star:</label><select id="proposeRenameAsteroidStar"></select></li>',
+                '        <label>Star:</label><input type="text" id="proposeRenameAsteroidStarFind" /><br />',
                 '        <li><label>Asteroid:</label><select id="proposeRenameAsteroidName"></select></li>',
                 '        <li><label>Name:</label><input type="text" id="proposeRenameAsteroidNewName" /></li></ul><br />',
                 '        <button type="button" id="proposeRenameAsteroidSubmit">Propose Rename Asteroid</button>',
                 '    </div>'
                 ].join('');
 
-                this.subscribe("onSeizedStars", function() {
-                    var el = Dom.get('proposeRenameAsteroidStar');
-                    if (el) {
-                        var opts = [];
-                        for(var m = 0; m < this.seized_stars.length; m++) {
-                            var obj = this.seized_stars[m];
-                            opts[opts.length] = '<option value="' + obj.id + '">' + obj.name + '</option>';
-                        }
-                        el.innerHTML = opts.join('');
-                        el.selectedIndex = -1;
-                    }
+                this.subscribe("onLoad", function() {
+                    this.renameAsteroidTextboxList = this.CreateStarSearch("proposeRenameAsteroidStarFind", Game.EmpireData.alliance_id);
+                    this.renameAsteroidTextboxList.dirtyEvent.subscribe(function(event, isDirty, oSelf){
+                        var star = this._oTblSingleSelection.Object;
+
+                        oSelf.PopulateBodiesForStar({star_id: star.id, bodyElement: 'proposeRenameAsteroidName', type: 'asteroid', Self: oSelf});
+  
+                    },this);
+
+                    Event.on("proposeRenameAsteroidSubmit", "click", this.RenameAsteroid, this, true);
                 }, this, true);
-
-                Event.on('proposeRenameAsteroidStar', 'change', this.PopulateBodiesForStar, {
-                    starElement: 'proposeRenameAsteroidStar',
-                    bodyElement: 'proposeRenameAsteroidName',
-                    type: 'asteroid',
-                    Self: this}, true);
-
-                Event.on('proposeRenameAsteroidSubmit', 'click', this.RenameAsteroid, this, true);
             }
 
             if(this.building.level >= 13) {
                 opts[opts.length] = '<option value="proposeMembersMining">Members Only Mining Rights</option>';
                 dis[dis.length] = [
                 '    <div id="proposeMembersMining" class="proposeOption" style="display:none;">',
+                '        <label>Zone:</label><select id="proposeMembersMiningZone"></select></li><br />',
                 '        Allow only members to mine on asteroids under this stations jurisdiction.<br />',
                 '        <button type="button" id="proposeMembersMiningSubmit">Propose</button>',
                 '    </div>'
                 ].join('');
-                Event.on("proposeMembersMiningSubmit", "click", this.MiningOnly, this, true);
+                this.subscribe("onLoad", function() {
+                    this.PopulateZoneSelect("proposeMembersMiningZone");
+                    Event.on("proposeMembersMiningSubmit", "click", this.MiningOnly, this, true);
+                }, this, true);
             }
 
             if(this.building.level >= 14) {
@@ -1619,19 +1610,17 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
 
         },
         PopulateBodiesForStar : function(e) {
-            var starId   = Lib.getSelectedOptionValue(this.starElement),
-                 bodyList = Dom.get(this.bodyElement);
+            var bodyList = Dom.get(e.bodyElement);
 
-            Lacuna.Pulser.Show()
-            this.Self.service.get_bodies_for_star_in_jurisdiction({
-                 session_id: Game.GetSession(''),
-                 building_id: this.Self.building.id,
-                 star_id: starId
+            Lacuna.Pulser.Show();
+            e.Self.service.get_bodies_for_star_in_jurisdiction({
+                 session_id     : Game.GetSession(''),
+                 building_id    : e.Self.building.id,
+                 star_id        : e.star_id
             }, {   
                  success: function(o) {
                      Lacuna.Pulser.Hide();
-                     this.Self.rpcSuccess(o);
-
+                     e.Self.rpcSuccess(o);
                      if (bodyList) {
                          var bodies = o.result.bodies;
 
@@ -1639,8 +1628,8 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                          for (var i = 0; i < bodies.length; i++) {
                              var obj = bodies[i];
 
-                             if (this.type) {
-                                 if (obj.type == this.type) {
+                             if (e.type) {
+                                 if (obj.type == e.type) {
                                      opts[opts.length] = '<option value="' + obj.id + '">' + obj.name + '</option>';
                                  }
                              }
@@ -1653,7 +1642,7 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                          bodyList.selectedIndex = -1;
                     }
                 },
-            scope: this
+            scope: e
             });
         },
         PopulateMiningForStar: function(e) {
@@ -1970,6 +1959,214 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                 });
             }
         },
+        RenameAsteroid: function(e) {
+            var button = Event.getTarget(e),
+                body = Lib.getSelectedOptionValue('proposeRenameAsteroidName'),
+                newName = Dom.get('proposeRenameAsteroidNewName').value;
+
+            button.disabled = true;
+
+            if (body && newName) {
+                Lacuna.Pulser.Show();
+                this.service.propose_rename_uninhabited({
+                    session_id: Game.GetSession(''),
+                    building_id: this.building.id,
+                    planet_id: body,
+                    name: newName
+                }, {
+                    success: function(o) {
+                        Lacuna.Pulser.Hide();
+                        this.rpcSuccess(o);
+
+                        this.proposeMessage.innerHTML = "Proposal to Rename asteroid successful.";
+                        Lib.fadeOutElm(this.proposeMessage);
+
+                        button.disabled = false;
+                        Dom.get('proposeRenameAsteroidNewName').value = '';
+                        Dom.get('proposeRenameAsteroidName').selectedIndex = -1;
+                    },
+                    failure: function(o) {
+                        button.disabled = false;
+                    },
+                    scope: this
+                });
+            }
+            else {
+                alert('Must select a body and chose a new name!');
+                button.disabled = false;
+            }
+        },
+        Broadcast : function(e) {
+            var btn = Event.getTarget(e);
+            btn.disabled = true;
+
+            this.service.propose_broadcast_on_network19({
+                session_id : Game.GetSession(''),
+                building_id : this.building.id,
+                message : Dom.get("proposeBroadcastMessage").value
+            },
+            {
+                success : function(o) {
+                    this.rpcSuccess(o);
+                    this.proposeMessage.innerHTML = "Proposal of Broadcast successful.";
+                    Lib.fadeOutElm(this.proposeMessage);
+                    Dom.get("proposeBroadcastMessage").value = "";
+                    btn.disabled = false;
+                },
+                failure : function(o) {
+                    btn.disabled = false;
+                },
+                scope:this
+            });
+        },
+        MemberInduct : function(e) {
+            if(this.inductMemberTextboxList._oTblSingleSelection) {
+                var btn = Event.getTarget(e);
+                btn.disabled = true;
+                var selObj = this.inductMemberTextboxList._oTblSingleSelection.Object;
+
+                this.service.propose_induct_member({
+                    session_id : Game.GetSession(''),
+                    building_id : this.building.id,
+                    empire_id : selObj.id,
+                    message : Dom.get('proposeInductMessage').value
+                },
+                {
+                    success : function(o) {
+                        this.rpcSuccess(o);
+                        this.proposeMessage.innerHTML = "Proposal to Induct Member successful.";
+                        Lib.fadeOutElm(this.proposeMessage);
+                        this.inductMemberTextboxList.ResetSelections();
+                        Dom.get('proposeInductMessage').value = "";
+                        btn.disabled = false;
+                    },
+                    failure : function(o) {
+                        btn.disabled = false;
+                    },
+                    scope:this
+                });
+            }
+        },
+        MemberExpel : function(e) {
+            var btn = Event.getTarget(e);
+            btn.disabled = true;
+
+            this.service.propose_expel_member({
+                session_id : Game.GetSession(''),
+                building_id : this.building.id,
+                empire_id : Lib.getSelectedOptionValue("proposeExpelMember"),
+                message : Dom.get('proposeExpelReason').value
+            },
+            {
+                success : function(o) {
+                    this.rpcSuccess(o);
+                    this.proposeMessage.innerHTML = "Proposal to Expel Member successful.";
+                    Lib.fadeOutElm(this.proposeMessage);
+                    Dom.get("proposeExpelMember").selectedIndex = -1;
+                    Dom.get('proposeExpelReason').value = "";
+                    btn.disabled = false;
+                },
+                failure : function(o) {
+                    btn.disabled = false;
+                },
+                scope:this
+            });
+        },
+        CreateEmpireSearch : function(id) {
+            var dataSource = new Util.XHRDataSource("/empire");
+            dataSource.connMethodPost = "POST";
+            dataSource.maxCacheEntries = 2;
+            dataSource.responseType = YAHOO.util.XHRDataSource.TYPE_JSON;
+            dataSource.responseSchema = {
+                resultsList : "result.empires",
+                fields : ["name","id"]
+            };
+
+            var oTextboxList = new YAHOO.lacuna.TextboxList(id, dataSource, { //config options
+                maxResultsDisplayed: 10,
+                minQueryLength:3,
+                multiSelect:false,
+                forceSelection:true,
+                formatResultLabelKey:"name",
+                formatResultColumnKeys:["name"],
+                useIndicator:true
+            });
+            oTextboxList.generateRequest = function(sQuery){
+                var s = Lang.JSON.stringify({
+                        "id": YAHOO.rpc.Service._requestId++,
+                        "method": "find",
+                        "jsonrpc": "2.0",
+                        "params": [
+                            Game.GetSession(""),
+                            decodeURIComponent(sQuery)
+                        ]
+                    });
+                return s;
+            };
+
+            return oTextboxList;
+        },
+        MemberNewLeader : function(e) {
+            var btn = Event.getTarget(e);
+            btn.disabled = true;
+
+            this.service.propose_elect_new_leader({
+                session_id : Game.GetSession(''),
+                building_id : this.building.id,
+                to_empire_id : Lib.getSelectedOptionValue("proposeElectLeaderMember")
+            },
+            {
+                success : function(o) {
+                    this.rpcSuccess(o);
+                    this.proposeMessage.innerHTML = "Proposal to Elect New Leader successful.";
+                    Lib.fadeOutElm(this.proposeMessage);
+                    Dom.get("proposeElectLeaderMember").selectedIndex = -1;
+                    btn.disabled = false;
+                },
+                failure : function(o) {
+                    btn.disabled = false;
+                },
+                scope:this
+            });
+        },
+
+        MiningOnly : function(e) {
+            var btn = Event.getTarget(e);
+            btn.disabled = true;
+
+            this.service.propose_members_only_mining_rights({
+                session_id  : Game.GetSession(''),
+                building_id : this.building.id,
+                zone        : Lib.getSelectedOptionValue("proposeMembersMiningZone")
+            },{
+                success : function(o) {
+                    this.rpcSuccess(o);
+                    this.proposeMessage.innerHTML = "Proposal for Members Only Mining Rights successful.";
+                    Lib.fadeOutElm(this.proposeMessage);
+                    btn.disabled = false;
+                },
+                failure : function(o) {
+                    btn.disabled = false;
+                },
+                scope:this
+            });
+        },
+        PopulateZoneSelect : function(sel_name) {
+            var el = Dom.get(sel_name);
+            if (el) {
+                var opts = [];
+                var zones = Game.ServerData.zone_size;
+                
+                for(var x = zones.x[0]; x < zones.x[1]; x++) {
+                    for(var y = zones.y[0]; y < zones.y[1]; y++) {
+                        var z = x+"|"+y;
+                        opts[opts.length] = '<option value="'+z+'">' + z + '</option>';
+                    }
+                }
+                el.innerHTML = opts.join('');
+                el.selectedIndex = -1;
+            }
+         },
 
         formatBody : function(body) {
             body = body.replace(/&/g,'&amp;');

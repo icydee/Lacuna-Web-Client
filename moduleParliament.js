@@ -930,10 +930,11 @@ if (typeof YAHOO.lacuna.modules.Parliament == "undefined" || !YAHOO.lacuna.modul
         MiningOnly : function(e) {
             var btn = Event.getTarget(e);
             btn.disabled = true;
-            
+
             this.service.propose_members_only_mining_rights({
-                session_id : Game.GetSession(''),
-                building_id : this.building.id
+                session_id  : Game.GetSession(''),
+                building_id : this.building.id,
+                zone        : Lib.getSelectedOptionValue("proposeTransferTo")
             },
             {
                 success : function(o) {
