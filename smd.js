@@ -962,8 +962,7 @@ if (typeof YAHOO.lacuna.SMD == "undefined" || !YAHOO.lacuna.SMD) {
                             {"name":"reason", "type":"string", "optional":false}
                         ],
                         "returns":{"type":"object"}
-                    }
- 
+                    },
                 }
             },
             EnergyReserve : {

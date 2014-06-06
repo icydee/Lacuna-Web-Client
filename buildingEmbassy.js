@@ -315,32 +315,23 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
             }
 
             if(this.building.level >= 14) {
-                                opts[opts.length] = '<option value="proposeEvictMining">Evict Mining Platform</option>';
+                opts[opts.length] = '<option value="proposeEvictMining">Evict Mining Platform</option>';
                 dis[dis.length] = [
                 '    <div id="proposeEvictMining" class="proposeOption" style="display:none;">',
-                '        <ul><li><label>Star:</label><select id="proposeEvictMiningStar"></select></li>',
+                '        <ul><li><label>Star:</label><input type="text" id="proposeEvictMiningStarFind" /></li>',
                 '        <li><label>Empire Mining:</label><select id="proposeEvictMiningId"></select></li><br />',
                 '        <button type="button" id="proposeEvictMiningSubmit">Propose Eviction</button></ul>',
                 '    </div>'
                 ].join('');
 
-                this.subscribe("onSeizedStars", function() {
-                    var el = Dom.get('proposeEvictMiningStar');
-                    if (el) {
-                        var opts = [];
-                        for(var m = 0; m < this.seized_stars.length; m++) {
-                            var obj = this.seized_stars[m];
-                            opts[opts.length] = '<option value="' + obj.id + '">' + obj.name + '</option>';
-                        }
-
-                        el.innerHTML = opts.join('');
-                        el.selectedIndex = -1;
-                    }
+                this.subscribe("onLoad", function() {
+                    this.evictMiningTextboxList = this.CreateStarSearch("proposeEvictMiningStarFind", Game.EmpireData.alliance_id);
+                    this.evictMiningTextboxList.dirtyEvent.subscribe(function(event, isDirty, oSelf){
+                        var star = this._oTblSingleSelection.Object;
+                        oSelf.LoadMining({star_id: star.id, miningElement: 'proposeEvictMiningId', Self: oSelf});
+                    },this);
                 }, this, true);
 
-                Event.on("proposeEvictMiningStar", "change", this.PopulateMiningForStar, {
-                    starElement: 'proposeEvictMiningStar',
-                    Self: this}, true);
                 Event.on('proposeEvictMiningSubmit', 'click', this.EvictMining, this, true);
             }
 
@@ -2167,6 +2158,35 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                 el.selectedIndex = -1;
             }
          },
+         LoadMining: function(e) {
+            var star_id      = e.star_id,
+                elementName  = e.miningElement,
+                Self         = e.Self;
+
+            var miningIdElem = Dom.get(elementName);
+            if (miningIdElem) {
+                Lacuna.Pulser.Show();
+                Self.service.get_mining_platforms_for_star_in_jurisdiction({
+                    session_id  : Game.GetSession(''),
+                    building_id : Self.building.id,
+                    star_id     : star_id
+                }, {
+                    success: function(o) {
+                        Lacuna.Pulser.Hide();
+                        var optionValues = [];
+                        var platforms = o.result.platforms;
+
+                        for (var i = 0; i < platforms.length; i++) {
+                            var platform = platforms[i];
+                            optionValues[optionValues.length] = '<option value="' + platform.id + '">' + platform.empire.name + ' ('+ platform.asteroid.name +')</option>';
+                        }
+
+                        miningIdElem.innerHTML = optionValues.join('');
+                    },
+                    scope: Self
+                });
+            }
+        },
 
         formatBody : function(body) {
             body = body.replace(/&/g,'&amp;');
