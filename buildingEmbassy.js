@@ -34,11 +34,11 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                 if(this.isLeader) {
                     tabs.push(this._getSendTab());
                 }
-                tabs.push(this._getLawsTab());
-                tabs.push(this._getPropsTab());
                 if(this.building.level >= 4) {
                     tabs.push(this._getProposeTab());
                 }
+                tabs.push(this._getPropsTab());
+                tabs.push(this._getLawsTab());
                 return tabs;
             }
             else {
@@ -339,14 +339,28 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                 opts[opts.length] = '<option value="proposeRenameUninhabited">Rename Uninhabited</option>';
                 dis[dis.length] = [
                 '    <div id="proposeRenameUninhabited" class="proposeOption" style="display:none;">',
-                                '               <ul><li><label>Star:</label><select id="proposeRenameUninhabitedStar"></select></li>',
+                '      <ul><li><label>Star:</label><input type="text" id="proposeRenameUninhabitedStarFind" /></li>',
                 '        <li><label>Planet:</label><select id="proposeRenameUninhabitedName"></select></li>',
                 '        <li><label>Name:</label><input type="text" id="proposeRenameUninhabitedNewName" /></li></ul><br />',
                 '        <button type="button" id="proposeRenameUninhabitedSubmit">Propose Rename Uninhabited</button>',
                 '    </div>'
                 ].join('');
 
-                this.subscribe("onSeizedStars", function() {
+                this.subscribe("onLoad", function() {
+                    this.renameUninhabitedTextboxList = this.CreateStarSearch("proposeRenameUninhabitedStarFind", Game.EmpireData.alliance_id);
+                    this.renameUninhabitedTextboxList.dirtyEvent.subscribe(function(event, isDirty, oSelf){
+                        var star = this._oTblSingleSelection.Object;
+
+                        oSelf.PopulateBodiesForStar({star_id: star.id, bodyElement: 'proposeRenameUninhabitedName', type: 'habitable planet', Self: oSelf});
+  
+                    },this);
+
+                    Event.on("proposeRenameUninhabitedSubmit", "click", this.RenameUninhabited, this, true);
+                }, this, true);
+
+
+
+                 this.subscribe("onSeizedStars", function() {
                     var el = Dom.get('proposeRenameUninhabitedStar');
                     if (el) {
                         var opts = [];
@@ -373,22 +387,30 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                 opts[opts.length] = '<option value="proposeMembersColonize">Members Only Colonization</option>';
                 dis[dis.length] = [
                 '    <div id="proposeMembersColonize" class="proposeOption" style="display:none;">',
+                '        <label>Zone:</label><select id="proposeMembersColonizeZone"></select></li><br />',
                 '        Allow only members to colonize planets under this stations jurisdiction.<br />',
                 '        <button type="button" id="proposeMembersColonizeSubmit">Propose</button>',
                 '    </div>'
                 ].join('');
-                Event.on("proposeMembersColonizeSubmit", "click", this.ColonizeOnly, this, true);
+                this.subscribe("onLoad", function() {
+                    this.PopulateZoneSelect("proposeMembersColonizeZone");
+                    Event.on("proposeMembersColonizeSubmit", "click", this.ColonizeOnly, this, true);
+                }, this, true);
             }
 
             if(this.building.level >= 20) {
                 opts[opts.length] = '<option value="proposeMembersExcavation">Members Only Excavation</option>';
                 dis[dis.length] = [
                 '    <div id="proposeMembersExcavation" class="proposeOption" style="display:none;">',
+                '        <label>Zone:</label><select id="proposeMembersExcavationZone"></select></li><br />',
                 '        Allow only members to excavate on bodies under this stations jurisdiction.<br />',
                 '        <button type="button" id="proposeMembersExcavationSubmit">Propose</button>',
                 '    </div>'
                 ].join('');
-                Event.on("proposeMembersExcavationSubmit", "click", this.ExcavationOnly, this, true);
+                this.subscribe("onLoad", function() {
+                    this.PopulateZoneSelect("proposeMembersExcavationZone");
+                    Event.on("proposeMembersExcavationSubmit", "click", this.ExcavationOnly, this, true);
+                }, this, true);
             }
             if(this.building.level >= 21) {
                 opts[opts.length] = '<option value="proposeEvictExcav">Evict Excavator</option>';
@@ -2186,6 +2208,88 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                     scope: Self
                 });
             }
+        },
+        RenameUninhabited: function(e) {
+            var button = Event.getTarget(e),
+                body = Lib.getSelectedOptionValue('proposeRenameUninhabitedName'),
+                newName = Dom.get('proposeRenameUninhabitedNewName').value;
+
+
+            button.disabled = true;
+
+            if (body && newName) {
+                Lacuna.Pulser.Show();
+                this.service.propose_rename_uninhabited({
+                    session_id: Game.GetSession(''),
+                    building_id: this.building.id,
+                    planet_id: body,
+                    name: newName
+                }, {
+                    success: function(o) {
+                        Lacuna.Pulser.Hide();
+                        this.rpcSuccess(o);
+
+                        this.proposeMessage.innerHTML = "Proposal to Rename uninhabited successful.";
+                        Lib.fadeOutElm(this.proposeMessage);
+
+                        button.disabled = false;
+                        Dom.get('proposeRenameUninhabitedNewName').value = '';
+                        Dom.get('proposeRenameUninhabitedName').selectedIndex = -1;
+                    },
+                    failure: function(o) {
+                        button.disabled = false;
+                    },
+                    scope: this
+                });
+            }
+            else {
+                alert('Must select a body and chose a new name!');
+                button.disabled = false;
+            }
+        },
+        ColonizeOnly : function(e) {
+            var btn = Event.getTarget(e);
+            btn.disabled = true;
+
+            this.service.propose_members_only_colonization({
+                session_id  : Game.GetSession(''),
+                building_id : this.building.id,
+                zone        : Lib.getSelectedOptionValue("proposeMembersColonizeZone")
+            },
+            {
+                success : function(o) {
+                    this.rpcSuccess(o);
+                    this.proposeMessage.innerHTML = "Proposal for Members Only Colonization successful.";
+                    Lib.fadeOutElm(this.proposeMessage);
+                    btn.disabled = false;
+                },
+                failure : function(o) {
+                    btn.disabled = false;
+                },
+                scope:this
+            });
+        },
+        ExcavationOnly : function(e) {
+            var btn = Event.getTarget(e);
+            btn.disabled = true;
+
+            this.service.propose_members_only_excavation({
+                session_id  : Game.GetSession(''),
+                building_id : this.building.id,
+                zone        : Lib.getSelectedOptionValue("proposeMembersExcavationZone")
+            },
+            {
+                success : function(o) {
+                    this.rpcSuccess(o);
+                    this.proposeMessage.innerHTML = "Proposal for Members Only Excavation successful.";
+                    Lib.fadeOutElm(this.proposeMessage);
+                    btn.disabled = false;
+                },
+                failure : function(o) {
+                    btn.disabled = false;
+                },
+                scope:this
+            });
         },
 
         formatBody : function(body) {
