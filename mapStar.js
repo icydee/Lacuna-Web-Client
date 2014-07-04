@@ -1250,7 +1250,7 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
                 '    <li><label>X: </label>',data.x,'</li>',
                 '    <li><label>Y: </label>',data.y,'</li>',
                 '    <li><label>Zone: </label>',data.zone,'</li>',
-                data.seized ? ('    <li><label>Alliance: </label>'+data.alliance.name+' ('+data.influence+'%)</li>') : '',
+                data.seized == 0 ? '' : ('    <li><label>Alliance: </label>'+data.alliance.name+' ('+data.influence+'%)</li>'),
                 '</ul>'
             ].join('');
             

@@ -31,7 +31,7 @@ if (typeof YAHOO.lacuna.Menu == "undefined" || !YAHOO.lacuna.Menu) {
             });
             userMenu.addItems([
                 { text: "Alliance Map", url: "/starmap/",                                 target: "_blank" },
-                { text: "Influence Map",url: "/influencemap/",                            target: "_blank" },
+                { text: "Influence Map",url: "/influencemap/today/index.html",            target: "_blank" },
                 { text: "Changes Log",  url: "/changes.txt",                              target: "_blank" },
                 { text: "Forums",       url: "http://community.lacunaexpanse.com/forums", target: "_blank" },
                 { text: "Help",         url: "http://www.lacunaexpanse.com/help/",        target: "_blank" },

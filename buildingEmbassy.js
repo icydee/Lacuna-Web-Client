@@ -413,15 +413,24 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                 }, this, true);
             }
             if(this.building.level >= 21) {
-                opts[opts.length] = '<option value="proposeEvictExcav">Evict Excavator</option>';
+                opts[opts.length] = '<option value="proposeEvictExcavator">Evict Excavator</option>';
                 dis[dis.length] = [
-                '    <div id="proposeEvictExcav" class="proposeOption" style="display:none;">',
-                                '               <ul><li><label>Star:</label><select id="proposeEvictExcavStar"></select></li>',
-                                '                <li><label>Body:</label><select id="proposeEvictExcavBody"></select></li>',
-                '        <li><label>Excavator:</label><select id="proposeEvictExcavId"></select></li><br />',
-                '        <button type="button" id="proposeEvictExcavSubmit">Propose Eviction</button></ul>',
+                '    <div id="proposeEvictExcavator" class="proposeOption" style="display:none;">',
+                '      <ul><li><label>Star:</label><input type="text" id="proposeEvictExcavatorStarFind" /></li>',
+                '        <li><label>Empire Excavating:</label><select id="proposeEvictExcavatorId"></select></li><br />',
+                '        <button type="button" id="proposeEvictExcavatorSubmit">Propose Eviction</button></ul>',
                 '    </div>'
                 ].join('');
+
+                this.subscribe("onLoad", function() {
+                    this.evictExcavatorTextboxList = this.CreateStarSearch("proposeEvictExcavatorStarFind", Game.EmpireData.alliance_id);
+                    this.evictExcavatorTextboxList.dirtyEvent.subscribe(function(event, isDirty, oSelf){
+                        var star = this._oTblSingleSelection.Object;
+                        oSelf.LoadExcavating({star_id: star.id, excavatingElement: 'proposeEvictExcavatorId', Self: oSelf});
+                    },this);
+                }, this, true);
+
+                Event.on('proposeEvictExcavatorSubmit', 'click', this.EvictExcavating, this, true);
             }
 
             if(this.building.level >= 23) {
@@ -1713,6 +1722,36 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                 button.disabled = false;
             }
         },
+        EvictExcavating: function(e) {
+            var button   = Event.getTarget(e),
+                platform_id = Lib.getSelectedOptionValue('proposeEvictExcavatorId');
+
+            button.disabled = true;
+            if (platform_id) {
+                Lacuna.Pulser.Show();
+                this.service.propose_evict_excavator({
+                    session_id: Game.GetSession(''),
+                    building_id: this.building.id,
+                    platform_id: platform_id
+                }, {
+                    success: function(o) {
+                        Lacuna.Pulser.Hide();
+                        this.rpcSuccess(o);
+                        this.proposeMessage.innerHTML = "Proposal for Eviction of Excavator successful.";
+                        Lib.fadeOutElm(this.proposeMessage);
+                        button.disabled = false;
+                    },
+                    failure: function(o) {
+                        button.disabled = false;
+                    },
+                    scope: this
+                });
+            }
+            else {
+                alert('Must selected a Excavator to Evict.');
+                button.disabled = false;
+            }
+        },
         PropsPopulate : function() {
             var details = Dom.get("propsDetails");
 
@@ -2204,6 +2243,35 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                         }
 
                         miningIdElem.innerHTML = optionValues.join('');
+                    },
+                    scope: Self
+                });
+            }
+        },
+        LoadExcavating: function(e) {
+            var star_id      = e.star_id,
+                elementName  = e.excavatingElement,
+                Self         = e.Self;
+
+            var excavatingIdElem = Dom.get(elementName);
+            if (excavatingIdElem) {
+                Lacuna.Pulser.Show();
+                Self.service.get_excavators_for_star_in_jurisdiction({
+                    session_id  : Game.GetSession(''),
+                    building_id : Self.building.id,
+                    star_id     : star_id
+                }, {
+                    success: function(o) {
+                        Lacuna.Pulser.Hide();
+                        var optionValues = [];
+                        var excavators = o.result.excavators;
+
+                        for (var i = 0; i < excavators.length; i++) {
+                            var excavator = excavators[i];
+                            optionValues[optionValues.length] = '<option value="' + excavator.id + '">' + excavator.empire.name + ' ('+ excavator.planet.name +')</option>';
+                        }
+
+                        excavatingIdElem.innerHTML = optionValues.join('');
                     },
                     scope: Self
                 });
