@@ -856,10 +856,10 @@ if (typeof YAHOO.lacuna.modules.Parliament == "undefined" || !YAHOO.lacuna.modul
             btn.disabled = true;
             
             this.service.propose_expel_member({
-                session_id : Game.GetSession(''),
+                session_id  : Game.GetSession(''),
                 building_id : this.building.id,
-                empire_id : Lib.getSelectedOptionValue("proposeExpelMember"),
-                message : Dom.get('proposeExpelReason').value
+                empire_id   : Lib.getSelectedOptionValue("proposeExpelMember"),
+                message     : Dom.get('proposeExpelReason').value
             },
             {
                 success : function(o) {

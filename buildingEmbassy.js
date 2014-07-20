@@ -30,10 +30,7 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
         
         getChildTabs : function() {
             if(this.alliance) {
-                var tabs =  [this._getStashTab(),this._getAllianceTab(),this._getMemberTab(),this._getInvitesTab()];
-                if(this.isLeader) {
-                    tabs.push(this._getSendTab());
-                }
+                var tabs =  [this._getStashTab(),this._getAllianceTab(),this._getMemberTab()];
                 if(this.building.level >= 4) {
                     tabs.push(this._getProposeTab());
                 }
@@ -213,7 +210,7 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                 }, this, true);
             }
 
-            if(this.building.level >= 10) {
+            if(this.building.level >= 10 || this.isLeader) {
                 opts[opts.length] = '<option value="proposeInduct">Induct Member</option>';
                 opts[opts.length] = '<option value="proposeExpel">Expel Member</option>';
                 dis[dis.length] = [
@@ -437,18 +434,22 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                 opts[opts.length] = '<option value="proposeNeutralizeBHG">Neutralize BHG</option>';
                 dis[dis.length] = [
                 '    <div id="proposeNeutralizeBHG" class="proposeOption" style="display:none;">',
+                '        <label>Zone:</label><select id="proposeNeutralizeBHGZone"></select></li><br />',
                 '        Neutralizes all Black Hole Generators under this stations jurisdiction.<br />',
                 '        <button type="button" id="proposeNeutralizeBHGSubmit">Propose</button>',
                 '    </div>'
                 ].join('');
-                Event.on("proposeNeutralizeBHGSubmit", "click", this.NeutralizeBHG, this, true);
+                this.subscribe("onLoad", function() {
+                    this.PopulateZoneSelect("proposeNeutralizeBHGZone");
+                    Event.on("proposeNeutralizeBHGSubmit", "click", this.NeutralizeBHG, this, true);
+                }, this, true);
             }
 
             if(this.building.level >= 25) {
                 opts[opts.length] = '<option value="proposeFireBfg">Fire BFG</option>';
                 dis[dis.length] = [
                 '    <div id="proposeFireBfg" class="proposeOption" style="display:none;">',
-                                '               <ul><li><label>Star:</label><select id="proposeFireBfgStars"></select></li>',
+                '        <label>Star:</label><input type="text" id="proposeFireBfgStarFind" /><br />',
                 '        <li><label>Body:</label><select id="proposeFireBfgBody"></select></li>',
                 '        <li><label>Reason:</label><textarea id="proposeFireBfgReason" rows="4" cols="80"></textarea></li></ul><br />',
                 '        <button type="button" id="proposeFireBfgSubmit">Propose to Fire BFG!</button>',
@@ -456,26 +457,21 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                 ].join('');
 
                 this.subscribe("onSeizedStars", function() {
-                    var el = Dom.get('proposeFireBfgStars');
-                    if (el) {
-                        var opts = [];
-                        for(var m = 0; m < this.seized_stars.length; m++) {
-                            var obj = this.seized_stars[m];
-                            opts[opts.length] = '<option value="' + obj.id + '">' + obj.name + '</option>';
-                        }
+                    this.fireBfgTextboxList = this.CreateStarSearch("proposeFireBfgStarFind", Game.EmpireData.alliance_id);
+                    this.fireBfgTextboxList.dirtyEvent.subscribe(function(event, isDirty, oSelf){
+                        var star = this._oTblSingleSelection.Object;
 
-                        el.innerHTML = opts.join('');
-                        el.selectedIndex = -1;
-                    }
-                }, this, true);
+                        oSelf.PopulateBodiesForStar({
+                            star_id     : star.id, 
+                            bodyElement : 'proposeFireBfgBody', 
+                            Self        : oSelf
+                        });
+  
+                    },this);
 
-                Event.on("proposeFireBfgStars", "change", this.PopulateBodiesForStar, {
-                    starElement: 'proposeFireBfgStars',
-                    bodyElement: 'proposeFireBfgBody',
-                    Self: this}, true);
-                Event.on("proposeFireBfgSubmit", "click", this.FireBFG, this, true);
+                    Event.on("proposeFireBfgSubmit", "click", this.FireBFG, this, true);
+                });
             }
-
             if (getAllianceMembers) {
                     Game.Services.Alliance.view_profile({
                         session_id :    Game.GetSession(),
@@ -659,29 +655,6 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
             this.invitesTab.subscribe("activeChange", this.getInvites, this, true);
             
             return this.invitesTab;
-        },
-        _getSendTab : function() {
-            this.sendTab = new YAHOO.widget.Tab({ label: "Send Invites", content: ['<div>',
-            '    <ul>',
-            '        <li>Invite: <span style="width:200px;display:inline-block;"><input id="embassySendTo" type="text" /></span></li>',
-            '        <li>Message: <textarea id="embassySendMessage" rows="1" cols="80"></textarea></li>',
-            '        <li><button type="button" id="embassySendInvite">Send Invite</button></li>',
-            '    </ul>',
-            '    <hr />',
-            '    <h3>Pending Invites</h3>',
-            '    <ul class="embassyHeader embassyInfo clearafter">',
-            '        <li class="embassyEmpire">Empire</li>',
-            '        <li class="embassyAction"></li>',
-            '        <li class="embassyMessage"></li>',
-            '    </ul>',
-            '    <div><div id="embassySendDetails"></div></div>',
-            '</div>'].join('')});
-            
-            this.sendTab.subscribe("activeChange", this.getPendingInvites, this,true);
-            
-            Event.on("embassySendInvite","click",this.SendInvite,this,true);
-            
-            return this.sendTab;
         },
         _getStashTab : function() {
             this.stashTab = new YAHOO.widget.Tab({ label: "Stash", content: [
@@ -1115,7 +1088,6 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                         Dom.get("embassyCreateName").value = "";
                         this.addTab(this._getAllianceTab());
                         this.addTab(this._getMemberTab());
-                        this.addTab(this._getSendTab());
                         this.removeTab(this.createAllianceTab);
                         this.MembersPopulate();
                         Lacuna.Pulser.Hide();
@@ -1480,30 +1452,9 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                     nLi = li.cloneNode(false);
                     Dom.addClass(nLi,"embassyEmpire");
                     nLi.innerHTML = obj.name;
-                    Event.on(nLi, "click", this.EmpireInfo, obj.empire_id);
+                    Event.on(nLi, "click", this.EmpireInfo, obj.id);
                     nUl.appendChild(nLi);
 
-                    if(this.isLeader && this.alliance.leader_id != obj.empire_id) {
-                        nLi = li.cloneNode(false);
-                        Dom.addClass(nLi,"embassyAction");
-                        var lbtn = document.createElement("button");
-                        lbtn.setAttribute("type", "button");
-                        lbtn.innerHTML = "Make Leader";
-                        lbtn = nLi.appendChild(lbtn);
-                        Event.on(lbtn, "click", this.MembersPromote, {Self:this,Member:obj,Line:nUl}, true);
-                        var bbtn = document.createElement("button");
-                        bbtn.setAttribute("type", "button");
-                        bbtn.innerHTML = "Expel";
-                        bbtn = nLi.appendChild(bbtn);
-                        Event.on(bbtn, "click", this.MembersExpel, {Self:this,Member:obj,Line:nUl}, true);
-                        nUl.appendChild(nLi);
-
-                        nLi = li.cloneNode(false);
-                        Dom.addClass(nLi,"embassyMessage");
-                        nLi.innerHTML = '<label>Reason:</label><input type="text" class="embassyMembersMessage" />';
-                        nUl.appendChild(nLi);
-                    }
-                                
                     details.appendChild(nUl);
                     
                 }
@@ -1519,51 +1470,6 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
         },
         EmpireInfo : function(e, id) {
             Lacuna.Info.Empire.Load(id);
-        },
-        MembersExpel : function() {
-            if(confirm(['Are you sure you want to expel ', this.Member.name,' from the alliance?'].join(''))) {
-                this.Self.service.expel_member({
-                    session_id:Game.GetSession(""),
-                    building_id:this.Self.building.id,
-                    empire_id:this.Member.empire_id,
-                    message:(Sel.query('.embassyMembersMessage', this.Line, true).value || "")
-                }, {
-                    success : function(o){
-                        YAHOO.log(o, "info", "Embassy.expel_member.success");
-                        this.Self.rpcSuccess(o);
-                        this.Self.alliance = o.result.alliance;
-                        this.Self.MembersPopulate();
-                        Lacuna.Pulser.Hide();
-                    },
-                    scope:this
-                });
-            }
-        },
-        MembersPromote: function() {
-            if(confirm(['Are you sure you want to transfer alliance control to ', this.Member.name,'?'].join(''))) {
-                this.Self.service.assign_alliance_leader({
-                    session_id:Game.GetSession(""),
-                    building_id:this.Self.building.id,
-                    new_leader_id:this.Member.empire_id
-                }, {
-                    success : function(o){
-                        YAHOO.log(o, "info", "Embassy.assign_alliance_leader.success");
-                        this.Self.rpcSuccess(o);
-                        this.Self.alliance = o.result.alliance;
-                        this.Self.isLeader = this.Self.alliance && this.Self.alliance.leader_id == Game.EmpireData.id;
-                        this.Self.removeTab(this.Self.allianceTab);
-                        this.Self.addTab(this.Self._getAllianceTab());
-                        this.Self.removeTab(this.Self.memberTab);
-                        this.Self.addTab(this.Self._getMemberTab());
-                        this.Self.MembersPopulate();
-                        this.Self.removeTab(this.Self.invitesTab);
-                        this.Self.addTab(this.Self._getInvitesTab());
-                        this.Self.removeTab(this.Self.sendTab);
-                        Lacuna.Pulser.Hide();
-                    },
-                    scope:this
-                });
-            }
         },
         LawsPopulate : function(){
             var details = Dom.get("lawsDetails");
@@ -2358,6 +2264,62 @@ if (typeof YAHOO.lacuna.buildings.Embassy == "undefined" || !YAHOO.lacuna.buildi
                 },
                 scope:this
             });
+        },
+        NeutralizeBHG : function(e) {
+            var btn = Event.getTarget(e);
+            btn.disabled = true;
+
+            this.service.propose_neutralize_bhg({
+                session_id  : Game.GetSession(''),
+                building_id : this.building.id,
+                zone        : Lib.getSelectedOptionValue("proposeNeutralizeBHGZone")
+            },
+            {
+                success : function(o) {
+                    this.rpcSuccess(o);
+                    this.proposeMessage.innerHTML = "Proposal for Neutralize Black Hold Generators successful.";
+                    Lib.fadeOutElm(this.proposeMessage);
+                    btn.disabled = false;
+                },
+                failure : function(o) {
+                    btn.disabled = false;
+                },
+                scope:this
+            });
+        },
+        FireBFG : function(e) {
+            var button = Event.getTarget(e),
+                body   = Lib.getSelectedOptionValue('proposeFireBfgBody'),
+                reason = Dom.get('proposeFireBfgReason').value;
+
+            if (body && reason) {
+                if (confirm('WARNING: The BFG is an extremly powerful weapon - do not point at face!!\n Are you sure you want to fire it?')) {
+                    button.disabled = true;
+
+                    Lacuna.Pulser.Show();
+                    this.service.propose_fire_bfg({
+                        session_id      : Game.GetSession(),
+                        building_id     : this.building.id,
+                        body_id         : body,
+                        reason          : reason
+                    }, {
+                        success : function(o) {
+                            Lacuna.Pulser.Hide();
+                            this.rpcSuccess(o);
+                            this.proposeMessage.innerHTML = "Proposal to Fire BFG successful.";
+                            Lib.fadeOutElm(this.proposeMessage);
+                            button.disabled = false;
+                        },
+                        failure : function(o) {
+                            button.disabled = false;
+                        },
+                        scope: this
+                    });
+                }
+            }
+            else {
+                alert('Must provide a body and a reason!');
+            }
         },
 
         formatBody : function(body) {
