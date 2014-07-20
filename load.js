@@ -354,12 +354,6 @@
     });
     //modules
     loader.addModule({
-        name: "parliament",
-        type: "js",
-        fullpath: urlBuilder("moduleParliament.js"),
-        requires : ["building"]
-    });
-    loader.addModule({
         name: "policestation",
         type: "js",
         fullpath: urlBuilder("modulePoliceStation.js"),
@@ -417,7 +411,6 @@
             "wasteexchanger",
             "wasterecycling",
             //modules
-            "parliament",
             "policestation",
             "stationcommand",
             //helpers

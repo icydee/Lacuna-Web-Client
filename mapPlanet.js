@@ -53,7 +53,6 @@ if (typeof YAHOO.lacuna.MapPlanet == "undefined" || !YAHOO.lacuna.MapPlanet) {
         "/wasteexchanger": Lacuna.buildings.WasteExchanger,
         "/wasterecycling": Lacuna.buildings.WasteRecycling,
         //modules
-        "/parliament": Lacuna.modules.Parliament,
         "/policestation": Lacuna.modules.PoliceStation,
         "/stationcommand": Lacuna.modules.StationCommand
     };
