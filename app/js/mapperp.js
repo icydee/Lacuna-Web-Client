@@ -2,7 +2,7 @@ YAHOO.namespace("lacuna");
 
 var $ = require('js/shims/jquery');
 
-if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
+if (typeof YAHOO.lacuna.MapperP == "undefined" || !YAHOO.lacuna.MapperP) {
 
 (function(){
     var Lang = YAHOO.lang,
@@ -15,8 +15,8 @@ if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
         Game = Lacuna.Game,
         Lib = Lacuna.Library;
 
-    var Mapper = {};
-    Mapper.util = {
+    var MapperP = {};
+    MapperP.util = {
         modulo: function(val, mod){
             var res = val%mod;
             if(res < 0) {
@@ -45,7 +45,7 @@ if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
         }
     };
 
-    Mapper.MovableContainer = function( parentEl ) {
+    MapperP.MovableContainer = function( parentEl ) {
         var div = document.createElement('div');
         Dom.addClass(div,"movableContainer");
         div.style.position = 'absolute';
@@ -56,7 +56,7 @@ if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
         this.reset();
         parentEl.appendChild( div );
     };
-    Mapper.MovableContainer.prototype = {
+    MapperP.MovableContainer.prototype = {
         move : function( x,y ) {
             this.offsetX += x;
             this.offsetY += y;
@@ -77,11 +77,11 @@ if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
         }
     };
 
-    Mapper.VisibleArea = function(map) {
+    MapperP.VisibleArea = function(map) {
         this._map = map;
         this.reset();
     };
-    Mapper.VisibleArea.prototype = {
+    MapperP.VisibleArea.prototype = {
         move : function(mx,my) {
             var mb = this._map.maxBounds; // = {x1Left:-15,x2Right:15,y1Top:15,y2Bottom:-15};
             var maxWidth = this._map.width;
@@ -245,10 +245,10 @@ if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
         return 'tile_'+ x + '_' + y + '_' + z;
     };
 
-    Mapper.StarTile = function(x, y, z, ox, oy, layer) {
-        Mapper.StarTile.superclass.constructor.call(this, x, y, z, ox, oy, layer);
+    MapperP.StarTile = function(x, y, z, ox, oy, layer) {
+        MapperP.StarTile.superclass.constructor.call(this, x, y, z, ox, oy, layer);
     };
-    Lang.extend(Mapper.StarTile, Tile, {
+    Lang.extend(MapperP.StarTile, Tile, {
         init : function() {
             this.domElement.title = this.data ? [this.data.name, " (", this.x, ",", this.y, ")"].join('') : "Uncharted Space";
 
@@ -410,11 +410,11 @@ if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
         }
     });
 
-    Mapper.PlanetTile = function(x, y, z, ox, oy, layer) {
-        Mapper.PlanetTile.superclass.constructor.call(this, x, y, z, ox, oy, layer);
+    MapperP.PlanetTile = function(x, y, z, ox, oy, layer) {
+        MapperP.PlanetTile.superclass.constructor.call(this, x, y, z, ox, oy, layer);
         Dom.addClass(this.domElement, "tile"+ this.tileSizeInPx);
     };
-    Lang.extend(Mapper.PlanetTile, Tile, {
+    Lang.extend(MapperP.PlanetTile, Tile, {
         init : function() {
             this.domElement.title = this.data ? this.data.name : "Ground";
             this._createActionIcon();
@@ -443,7 +443,7 @@ if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
             }*/
         },
         refresh : function() {
-            Mapper.PlanetTile.superclass.refresh.call(this);
+            MapperP.PlanetTile.superclass.refresh.call(this);
             this.init();
         },
         appendToDom : function() {
@@ -453,7 +453,7 @@ if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
         },
         remove : function() {
             this.stopTick();
-            Mapper.PlanetTile.superclass.remove.call(this);
+            MapperP.PlanetTile.superclass.remove.call(this);
         },
 
         startTick : function() {
@@ -762,10 +762,10 @@ if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
     };
     Lang.augmentProto(TileLayer, Util.EventProvider);
 
-    Mapper.StarTileLayer = function(map, visibleArea, TileConstructor) {
-        Mapper.StarTileLayer.superclass.constructor.call(this, map, visibleArea, TileConstructor);
+    MapperP.StarTileLayer = function(map, visibleArea, TileConstructor) {
+        MapperP.StarTileLayer.superclass.constructor.call(this, map, visibleArea, TileConstructor);
     };
-    Lang.extend(Mapper.StarTileLayer, TileLayer, {
+    Lang.extend(MapperP.StarTileLayer, TileLayer, {
         _showCachedTiles : function() {
             if(this.tileCache) {
                 var bounds = this.visibleArea.coordBounds();
@@ -837,12 +837,12 @@ if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
         }
     });
 
-    Mapper.PlanetTileLayer = function(map, visibleArea, TileConstructor) {
+    MapperP.PlanetTileLayer = function(map, visibleArea, TileConstructor) {
         this.bounds = {x1:map.maxBounds.x1Left,x2:map.maxBounds.x2Right,y1:map.maxBounds.y1Top,y2:map.maxBounds.y2Bottom};
 
-        Mapper.PlanetTileLayer.superclass.constructor.call(this, map, visibleArea, TileConstructor);
+        MapperP.PlanetTileLayer.superclass.constructor.call(this, map, visibleArea, TileConstructor);
     };
-    Lang.extend(Mapper.PlanetTileLayer, TileLayer, {
+    Lang.extend(MapperP.PlanetTileLayer, TileLayer, {
         _showCachedTiles : function() {
             if(this.tileCache) {
                 var bounds = this.bounds;
@@ -928,16 +928,16 @@ if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
 
         this.mapDiv = document.getElementById( divId );
         this.mapDiv.style.overflow = "hidden";
-        this.movableContainer = new Mapper.MovableContainer( this.mapDiv );
+        this.movableContainer = new MapperP.MovableContainer( this.mapDiv );
 
         this.init();
 
         var ua = navigator.userAgent;
         if(ua.match(/iPhone|iPod|iPad/i)) {
-            this.controller = new Mapper.iPhoneController( this );
+            this.controller = new MapperP.iPhoneController( this );
         }
         else {
-            this.controller = new Mapper.TraditionalController( this );
+            this.controller = new MapperP.TraditionalController( this );
         }
     };
     Map.prototype = {
@@ -948,7 +948,7 @@ if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
         // define the center of the map after the zoom. Otherwise
         // the center will be the same as before the zoom
         zoomIn : function() {
-            //YAHOO.log("zooming in", "info", "Mapper.Map");
+            //YAHOO.log("zooming in", "info", "MapperP.Map");
             if( this.zoom >= this.maxZoom ) {
                 return;
             }
@@ -956,7 +956,7 @@ if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
             //called by zoom display change //this.refresh();
         },
         zoomOut : function() {
-            //YAHOO.log("zooming out", "info", "Mapper.Map");
+            //YAHOO.log("zooming out", "info", "MapperP.Map");
             if( this.zoom <= this.minZoom ) {
                 return;
             }
@@ -1035,12 +1035,12 @@ if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
             this.height = $(window.document.body).height();
 
             this.movableContainer.reset();
-            this.visibleArea = new Mapper.VisibleArea(this);
+            this.visibleArea = new MapperP.VisibleArea(this);
 
             if( this.tileLayer ) {
                 this.tileLayer.destroy();
             }
-            this.tileLayer = new this.TileLayer(this, Mapper.util.clone(this.visibleArea), this.Tile);
+            this.tileLayer = new this.TileLayer(this, MapperP.util.clone(this.visibleArea), this.Tile);
             //pass through
             this.tileLayer.subscribe("onReloadTile", function(tile){
                 this.fireEvent("onReloadTile",tile.data.id);
@@ -1106,11 +1106,11 @@ if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
     Lang.augmentProto(Map, Util.EventProvider);
 
     var MAX_STAR_AREA = 3001;
-    Mapper.StarMap = function( divId, options ) {
-        Mapper.StarMap.superclass.constructor.call(this, divId, options);
+    MapperP.StarMap = function( divId, options ) {
+        MapperP.StarMap.superclass.constructor.call(this, divId, options);
         Dom.setStyle(this.mapDiv, 'background-image', 'url("'+Lib.AssetUrl+'star_system/field.png")');
     };
-    Lang.extend(Mapper.StarMap, Map, {
+    Lang.extend(MapperP.StarMap, Map, {
         _setTileSizeByZoom : function() {
             Game.SetCookieSettings("starZoom", this.zoom);
             switch(this.zoom){
@@ -1142,8 +1142,8 @@ if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
             this.maxBounds = {x1Left:mapSize.x[0],x2Right:mapSize.x[1],y1Top:mapSize.y[1],y2Bottom:mapSize.y[0]};
             this.requestQueue = [];
 
-            this.Tile = Mapper.StarTile;
-            this.TileLayer = Mapper.StarTileLayer;
+            this.Tile = MapperP.StarTile;
+            this.TileLayer = MapperP.StarTileLayer;
 
             this.zoom = Game.GetCookieSettings("starZoom",0)*1;
             this.hidePlanets = Game.GetCookieSettings("hidePlanets", 0)*1;
@@ -1253,11 +1253,11 @@ if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
 
     });
 
-    Mapper.PlanetMap = function( divId, options ) {
-        Mapper.PlanetMap.superclass.constructor.call(this, divId);
+    MapperP.PlanetMap = function( divId, options ) {
+        MapperP.PlanetMap.superclass.constructor.call(this, divId);
         this.setSurfaceUrl(options.surfaceUrl);
     };
-    Lang.extend(Mapper.PlanetMap, Map, {
+    Lang.extend(MapperP.PlanetMap, Map, {
         _setTileSizeByZoom : function() {
             Game.SetCookieSettings("planetZoom", this.zoom);
             switch(this.zoom){
@@ -1285,8 +1285,8 @@ if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
             this.bounds = {x1Left:-5,x2Right:5,y1Top:5,y2Bottom:-5};
             this.maxBounds = {x1Left:-5,x2Right:5,y1Top:5,y2Bottom:-5};
 
-            this.Tile = Mapper.PlanetTile;
-            this.TileLayer = Mapper.PlanetTileLayer;
+            this.Tile = MapperP.PlanetTile;
+            this.TileLayer = MapperP.PlanetTileLayer;
 
             this.zoom = Game.GetCookieSettings("planetZoom",0)*1;
             this._setTileSizeByZoom();
@@ -1421,9 +1421,9 @@ if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
 
 
 
-    Mapper.TraditionalController = function( map ) {
+    MapperP.TraditionalController = function( map ) {
         this.map = map;
-        this.dd = new YAHOO.util.DragDrop(map.mapDiv, 'mapper' );
+        this.dd = new YAHOO.util.DragDrop(map.mapDiv, 'mapperp' );
         this.dd.subscribe("dragEvent", this.moveMap, this, true);
         this.dd.subscribe("startDragEvent", this.startDrag, this, true);
         this.dd.subscribe("endDragEvent", this.endDrag, this, true);
@@ -1508,7 +1508,7 @@ if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
         }
 
     };
-    Mapper.TraditionalController.prototype = {
+    MapperP.TraditionalController.prototype = {
         setZoomDisplay : function(zoom) {
             if(this.zoomSlider && this.zoomSlider.getZoom() != zoom) {
                 this.zoomSlider.setZoom(zoom);
@@ -1579,7 +1579,7 @@ if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
         }
     };
 
-    Mapper.iPhoneController = function(map) {
+    MapperP.iPhoneController = function(map) {
         this.map = map;
         this.currentX = 0;
         this.currentY = 0;
@@ -1592,7 +1592,7 @@ if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
             Event.on(map.mapDiv, 'gestureend', this.gestureEnd, this, true);
         }
     };
-    Mapper.iPhoneController.prototype = {
+    MapperP.iPhoneController.prototype = {
         touchStart : function(e){
             if(e.touches.length == 1){ // Only deal with one finger
                 var touch = e.touches[0]; // Get the information for finger #1
@@ -1629,9 +1629,9 @@ if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
         }
     };
 
-    YAHOO.lacuna.Mapper = Mapper;
+    YAHOO.lacuna.MapperP = MapperP;
 })();
-YAHOO.register("mapper", YAHOO.lacuna.Mapper, {version: "1", build: "0"});
+YAHOO.register("mapperp", YAHOO.lacuna.MapperP, {version: "1", build: "0"});
 
 }
 // vim: noet:ts=4:sw=4

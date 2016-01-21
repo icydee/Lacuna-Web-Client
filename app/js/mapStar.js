@@ -607,7 +607,7 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
                 this._elGrid = document.getElementById("content").appendChild(starMap);
                 this.SetSize();
 
-                var map = new Lacuna.Mapper.StarMap("starMap");
+                var map = new Lacuna.MapperS.StarMap("starMap");
                 //map.imgUrlLoc = Lib.AssetUrl + 'ui/mapiator/';
 
                 //draw what we got
@@ -1455,7 +1455,7 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
                             Lib.fadeOutElm("planetDetailRenameMessage");
                             Dom.get("planetDetailsName").innerHTML = newName;
                             Game.EmpireData.planets[this.selectedBody.id].name = newName;
-                            if(this.selectedTile instanceof YAHOO.lacuna.Mapper.StarTile) {
+                            if(this.selectedTile instanceof YAHOO.lacuna.MapperS.StarTile) {
                                 this._map.tileCache[this.selectedTile.x][this.selectedTile.y].name = newName;
                                 this.selectedTile.refresh();
                             }

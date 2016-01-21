@@ -3638,6 +3638,11 @@ if (typeof YAHOO.lacuna.SMD == "undefined" || !YAHOO.lacuna.SMD) {
                      }
                     */
                 },
+				"get_star_chunk" : {
+					"description" : "Retrieves a chunk of the star map (50 x 50).",
+					"parameters"  : [{"name":"args", "type":"object", "optional":false}],
+					"returns"     : {"type" : "object"}
+				},
                 "get_star_map" : {
                     "description" : "Retrieves a chunk of the star map (lite version).",
                     "parameters" : [{"name":"args", "type":"object", "optional":false}],

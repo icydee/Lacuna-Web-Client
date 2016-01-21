@@ -71,7 +71,8 @@
         require('js/createSpecies');
         require('js/createEmpire');
         require('js/login');
-        require('js/mapper');
+        require('js/mapperp');
+        require('js/mappers');
         require('js/mapStar');
 
         // Buildings
