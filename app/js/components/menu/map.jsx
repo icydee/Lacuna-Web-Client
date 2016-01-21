@@ -43,10 +43,6 @@ var Map = React.createClass({
             return <div></div>;
         }
 
-        // console.log('Rendering map');
-        // console.log('mapMode = ' + this.state.mapMode + '(' + this.previousMapMode + ')');
-        // console.log('planet = ' + this.state.planet + '(' + this.previousPlanetId + ')');
-
         var Lacuna = YAHOO.lacuna;
         var Game = Lacuna.Game;
 
@@ -56,7 +52,7 @@ var Map = React.createClass({
             this.previousPlanetId !== this.state.planet ||
             (
                 // Render if we've changed from the starMap to the planetMap
-                this.previousMapMode !== this.state.mapMode &&
+                this.state.mapMode !== this.previousMapMode &&
                 this.state.mapMode === MapModeStore.PLANET_MAP_MODE
             )
         ) {
@@ -64,7 +60,7 @@ var Map = React.createClass({
             // Render the planet view.
             Lacuna.MapStar.MapVisible(this.state.mapMode === MapModeStore.STAR_MAP_MODE);
             Lacuna.MapPlanet.MapVisible(this.state.mapMode === MapModeStore.PLANET_MAP_MODE);
-            Lacuna.MapPlanet.Load(this.state.planet, true, this.state.mapMode === MapModeStore.STAR_MAP_MODE);
+            Lacuna.MapPlanet.Load(this.state.planet, true, this.state.mapMode === MapModeStore.STAR_MAP_MODE || this.state.mapMode === MapModeStore.NEW_MAP_MODE);
 
             // Sadly, we have to pull hacky tricks like this to avoid infinite loops.
             this.previousPlanetId = this.state.planet;
@@ -90,6 +86,21 @@ var Map = React.createClass({
 
             // Return nothing because we're using the old (non-React) mapping system.
             return <div></div>;
+        }
+
+        if (
+            this.state.mapMode !== this.previousMapMode &&
+            this.state.mapMode === MapModeStore.NEW_MAP_MODE
+        ) {
+
+            // Render the new star map view.
+            Lacuna.MapPlanet.MapVisible(false);
+            Lacuna.MapStar.MapVisible(false);
+
+            this.previousPlanetId = this.state.planet;
+            this.previousMapMode = this.state.mapMode;
+
+            return <div>HELLO WORLD</div>
         }
 
         // We shouldn't end up here, but consiering how hacky all this is it *may* hapen. :(
