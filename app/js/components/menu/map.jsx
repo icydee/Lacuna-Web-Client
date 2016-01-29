@@ -3,10 +3,11 @@
 var React = require('react');
 var Reflux = require('reflux');
 
-var BodyRPCStore = require('js/stores/rpc/body');
-var MapModeStore = require('js/stores/menu/mapMode');
-var PlanetStore = require('js/stores/menu/planet');
-var MenuStore = require('js/stores/menu');
+var BodyRPCStore    = require('js/stores/rpc/body');
+var MapModeStore    = require('js/stores/menu/mapMode');
+var PlanetStore     = require('js/stores/menu/planet');
+var MenuStore       = require('js/stores/menu');
+var StarField       = require('js/components/window/starfield');
 
 // TODO: factor out all this glue code
 
@@ -100,10 +101,10 @@ var Map = React.createClass({
             this.previousPlanetId = this.state.planet;
             this.previousMapMode = this.state.mapMode;
 
-            return <div>HELLO WORLD</div>
+            return <StarField />
         }
 
-        // We shouldn't end up here, but consiering how hacky all this is it *may* hapen. :(
+        // We shouldn't end up here, but consiering how hacky all this is it *may* happen. :(
         return <div></div>;
     }
 });
