@@ -30,6 +30,8 @@ var TopBar = React.createClass({
     mapButtonTip: function() {
         if (this.state.mapMode === MapModeStore.PLANET_MAP_MODE) {
             return 'To Star Map';
+        } else if (this.state.mapMode === MapModeStore.STAR_MAP_MODE) {
+            return 'To Test Star Map';
         } else {
             return 'To Planet Map';
         }
