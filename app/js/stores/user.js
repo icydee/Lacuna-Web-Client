@@ -2,13 +2,13 @@
 
 var Reflux = require('reflux');
 
-var ChatActions = require('js/actions/menu/chat');
-var MenuActions = require('js/actions/menu');
-var SessionActions = require('js/actions/session');
-var StatusActions = require('js/actions/status');
-var TickerActions = require('js/actions/ticker');
-var UserActions = require('js/actions/user');
-var SessionStore = require('js/stores/session');
+var ChatActions     = require('js/actions/menu/chat');
+var MenuActions     = require('js/actions/menu');
+var SessionActions  = require('js/actions/session');
+var StatusActions   = require('js/actions/status');
+var TickerActions   = require('js/actions/ticker');
+var UserActions     = require('js/actions/user');
+var SessionStore    = require('js/stores/session');
 
 var server = require('js/server');
 

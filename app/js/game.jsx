@@ -6,18 +6,15 @@ var React = require('react');
 var _ = require('lodash');
 var $ = require('js/shims/jquery');
 
-var ReactTooltip = require('react-tooltip');
-
-var Window = require('js/components/window');
-
+var ReactTooltip    = require('react-tooltip');
+var Window          = require('js/components/window');
 var KeyboardActions = require('js/actions/keyboard');
-var MapActions = require('js/actions/menu/map');
-var MenuActions = require('js/actions/menu');
-var SessionActions = require('js/actions/session');
-var TickerActions = require('js/actions/ticker');
-
-var UserActions = require('js/actions/user');
-var BodyRPCStore = require('js/stores/rpc/body');
+var MapActions      = require('js/actions/menu/map');
+var MenuActions     = require('js/actions/menu');
+var SessionActions  = require('js/actions/session');
+var TickerActions   = require('js/actions/ticker');
+var UserActions     = require('js/actions/user');
+var BodyRPCStore    = require('js/stores/rpc/body');
 
 if (typeof YAHOO.lacuna.Game == "undefined" || !YAHOO.lacuna.Game) {
 

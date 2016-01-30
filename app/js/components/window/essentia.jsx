@@ -6,23 +6,20 @@ var $ = require('js/shims/jquery');
 var _ = require('lodash');
 var classnames = require('classnames');
 
-var EssentiaActions = require('js/actions/window/essentia');
-var InviteActions = require('js/actions/window/invite');
-
-var BoostsRPCStore = require('js/stores/rpc/empire/boosts');
-var EmpireRPCStore = require('js/stores/rpc/empire');
-var EssentiaRPCStore = require('js/stores/rpc/empire/essentia').listen(_.noop);
+var EssentiaActions     = require('js/actions/window/essentia');
+var InviteActions       = require('js/actions/window/invite');
+var BoostsRPCStore      = require('js/stores/rpc/empire/boosts');
+var EmpireRPCStore      = require('js/stores/rpc/empire');
+var EssentiaRPCStore    = require('js/stores/rpc/empire/essentia').listen(_.noop);
 var EssentiaWindowStore = require('js/stores/window/essentia');
-var SessionStore = require('js/stores/session');
-
-var Panel = require('js/components/panel');
-
-var ReactTabs = require('react-tabs');
-var ReactTooltip = require('react-tooltip');
-var Tab = ReactTabs.Tab;
-var Tabs = ReactTabs.Tabs;
-var TabList = ReactTabs.TabList;
-var TabPanel = ReactTabs.TabPanel;
+var SessionStore        = require('js/stores/session');
+var Panel               = require('js/components/panel');
+var ReactTabs           = require('react-tabs');
+var ReactTooltip        = require('react-tooltip');
+var Tab                 = ReactTabs.Tab;
+var Tabs                = ReactTabs.Tabs;
+var TabList             = ReactTabs.TabList;
+var TabPanel            = ReactTabs.TabPanel;
 
 var util = require('js/util');
 
