@@ -11,24 +11,39 @@ var starFieldImage = "url(" + Lib.AssetUrl+'star_system/field.png' + ")";
 
 var StarField = React.createClass({
     render: function() {
+        var windowWidth = window.innerWidth;
+        var windowHeight = window.innerHeight;
+        
         return (
-            <div id="expanse" style={{
-                width:      "100vw",
-                height:     "100vh",
+            // This is the 'view-port' container
+            <div id="view-port" style={{
+                width:      windowWidth,
+                height:     windowHeight,
                 position:   "absolute",
                 top:        0,
                 left:       0
               }}>
-              <Draggable >
-                <div id="starmap" style={{ 
-                  width:    20000, 
-                  height:   20000, 
-                  position: "absolute", 
-                  top:      -10000,
-                  left:     -10000,
-                  backgroundImage: starFieldImage 
-                }} />
-              </Draggable>
+              // This is the whole of the expanse
+              <div id="expanse" style={{
+                position:   "absolute",
+                left:       windowWidth - 20000,
+                top:        windowHeight - 20000,
+                width:      40000 - windowWidth,
+                height:     40000 - windowHeight
+              }}>
+                <Draggable 
+                  bounds = "parent"
+                >
+                  <div id="starmap" style={{ 
+                    width:    20000, 
+                    height:   20000, 
+                    position: "absolute", 
+                    top:      10000,
+                    left:     10000,
+                    backgroundImage: starFieldImage 
+                  }} />
+                </Draggable>
+              </div>
             </div>
         );
     }
